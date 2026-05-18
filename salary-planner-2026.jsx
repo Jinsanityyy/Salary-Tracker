@@ -180,7 +180,7 @@ export default function App() {
   });
 
   const [editing, setEditing]         = useState(null);
-  const [editVal, setEditVal]         = useState({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
+  const [editVal, setEditVal]         = useState({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcHours: "", clientHours: "" });
   const [tab, setTab]                 = useState("timeline");
   const [useCustomFx, setUseCustomFx] = useState(false);
   const [customFx, setCustomFx]       = useState("");
@@ -204,19 +204,19 @@ export default function App() {
     setTimeout(() => setToast(null), 2000);
   }
 
-  function rateNoteFromType(rateType, mcDays, clientDays) {
+  function rateNoteFromType(rateType, mcHours, clientHours) {
     if (rateType === "mc")     return "Masterclass $3.75/hr";
     if (rateType === "client") return "Client $5.50/hr";
-    const mc = parseFloat(mcDays) || 0;
-    const cl = parseFloat(clientDays) || 0;
-    return `Mixed (${mc}d MC + ${cl}d Client)`;
+    const mc = parseFloat(mcHours) || 0;
+    const cl = parseFloat(clientHours) || 0;
+    return `Mixed (${mc}h MC + ${cl}h Client)`;
   }
 
-  function computeUSD(rateType, days, mcDays, clientDays) {
-    if (rateType === "mc")     return (parseFloat(days) || 0) * MASTER_RATE * HOURS;
-    if (rateType === "client") return (parseFloat(days) || 0) * CLIENT_RATE  * HOURS;
-    return (parseFloat(mcDays) || 0) * MASTER_RATE * HOURS
-         + (parseFloat(clientDays) || 0) * CLIENT_RATE * HOURS;
+  function computeUSD(rateType, hours, mcHours, clientHours) {
+    if (rateType === "mc")     return (parseFloat(hours) || 0) * MASTER_RATE;
+    if (rateType === "client") return (parseFloat(hours) || 0) * CLIENT_RATE;
+    return (parseFloat(mcHours) || 0) * MASTER_RATE
+         + (parseFloat(clientHours) || 0) * CLIENT_RATE;
   }
 
   function getCycleData(cycle) {
@@ -227,7 +227,7 @@ export default function App() {
       fxUsed:   actual.fxRate,
       hours:    actual.hours,
       rateNote: actual.rateType
-        ? rateNoteFromType(actual.rateType, actual.mcDays, actual.clientDays)
+        ? rateNoteFromType(actual.rateType, actual.mcHours, actual.clientHours)
         : cycle.rateNote,
       isActual: true,
       isLocked: !!actual.locked,
@@ -244,8 +244,8 @@ export default function App() {
     setEditVal(prev => {
       const next = { ...prev, [field]: value };
 
-      // Auto-compute USD from rate type + hours/days
-      if (["rateType", "hours", "mcDays", "clientDays"].includes(field)) {
+      // Auto-compute USD from rate type + hours
+      if (["rateType", "hours", "mcHours", "clientHours"].includes(field)) {
         if (next.rateType === "mc") {
           const u = (parseFloat(next.hours) || 0) * MASTER_RATE;
           next.usd = u > 0 ? u.toFixed(2) : "";
@@ -253,15 +253,16 @@ export default function App() {
           const u = (parseFloat(next.hours) || 0) * CLIENT_RATE;
           next.usd = u > 0 ? u.toFixed(2) : "";
         } else if (next.rateType === "mixed") {
-          const u = (parseFloat(next.mcDays) || 0) * MASTER_RATE * HOURS
-                  + (parseFloat(next.clientDays) || 0) * CLIENT_RATE * HOURS;
-          next.usd = u > 0 ? u.toFixed(2) : "";
-          next.hours = String(((parseFloat(next.mcDays) || 0) + (parseFloat(next.clientDays) || 0)) * HOURS);
+          const mc = parseFloat(next.mcHours)     || 0;
+          const cl = parseFloat(next.clientHours) || 0;
+          const u  = mc * MASTER_RATE + cl * CLIENT_RATE;
+          next.usd   = u > 0 ? u.toFixed(2) : "";
+          next.hours = mc + cl > 0 ? String(mc + cl) : "";
         }
       }
 
       // Auto-compute PHP from USD × FX rate
-      if (["rateType", "hours", "mcDays", "clientDays", "fxRate", "usd"].includes(field)) {
+      if (["rateType", "hours", "mcHours", "clientHours", "fxRate", "usd"].includes(field)) {
         const u  = parseFloat(next.usd)    || 0;
         const fx = parseFloat(next.fxRate) || 0;
         if (u > 0 && fx > 0) next.php = Math.round(u * fx).toString();
@@ -274,36 +275,34 @@ export default function App() {
   function saveActual(key) {
     const p = parseFloat(editVal.php);
     if (!p || p <= 0) return;
-    const cycle    = ALL_CYCLES.find(c => c.key === key);
-    const isMixed  = editVal.rateType === "mixed";
-    const mcDays   = parseFloat(editVal.mcDays)     || 0;
-    const clDays   = parseFloat(editVal.clientDays) || 0;
-    const totalDays = isMixed ? mcDays + clDays : (parseFloat(editVal.hours) / HOURS || cycle?.days || 0);
-    const autoUSD  = computeUSD(editVal.rateType, totalDays, mcDays, clDays);
-    const hours    = isMixed ? (mcDays + clDays) * HOURS : (parseFloat(editVal.hours) || totalDays * HOURS);
+    const isMixed   = editVal.rateType === "mixed";
+    const mcHours   = parseFloat(editVal.mcHours)     || 0;
+    const clHours   = parseFloat(editVal.clientHours) || 0;
+    const hours     = isMixed ? mcHours + clHours : (parseFloat(editVal.hours) || 0);
+    const autoUSD   = computeUSD(editVal.rateType, hours, mcHours, clHours);
 
     setActuals(prev => ({
       ...prev,
       [key]: {
-        php:        p,
-        usd:        parseFloat(editVal.usd) || autoUSD,
-        fxRate:     parseFloat(editVal.fxRate) || effectiveFx,
+        php:         p,
+        usd:         parseFloat(editVal.usd) || autoUSD,
+        fxRate:      parseFloat(editVal.fxRate) || effectiveFx,
         hours,
-        rateType:   editVal.rateType,
-        mcDays:     isMixed ? mcDays   : null,
-        clientDays: isMixed ? clDays   : null,
-        locked:     false,
+        rateType:    editVal.rateType,
+        mcHours:     isMixed ? mcHours : null,
+        clientHours: isMixed ? clHours : null,
+        locked:      false,
       },
     }));
     setEditing(null);
-    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
+    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcHours: "", clientHours: "" });
     showToast("✓ Saved");
   }
 
   function removeActual(key) {
     setActuals(prev => { const n = { ...prev }; delete n[key]; return n; });
     setEditing(null);
-    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
+    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcHours: "", clientHours: "" });
     showToast("Removed", "error");
   }
 
@@ -511,9 +510,9 @@ export default function App() {
                             usd:        ex?.usd        || "",
                             fxRate:     ex?.fxRate     || "",
                             hours:      ex?.hours      || "",
-                            rateType:   ex?.rateType   || "client",
-                            mcDays:     ex?.mcDays     || "",
-                            clientDays: ex?.clientDays || "",
+                            rateType:    ex?.rateType    || "client",
+                            mcHours:     ex?.mcHours     || "",
+                            clientHours: ex?.clientHours || "",
                           });
                         }} style={{
                           background: isEditing ? "rgba(239,68,68,.12)" : "rgba(99,102,241,.12)",
@@ -551,10 +550,10 @@ export default function App() {
                     {/* Edit panel */}
                     {isEditing && (() => {
                       const isMixed = editVal.rateType === "mixed";
-                      const mcD  = parseFloat(editVal.mcDays)     || 0;
-                      const clD  = parseFloat(editVal.clientDays) || 0;
+                      const mcH  = parseFloat(editVal.mcHours)     || 0;
+                      const clH  = parseFloat(editVal.clientHours) || 0;
                       const autoUSD = isMixed
-                        ? (mcD * MASTER_RATE * HOURS + clD * CLIENT_RATE * HOURS).toFixed(2)
+                        ? (mcH * MASTER_RATE + clH * CLIENT_RATE).toFixed(2)
                         : "";
                       return (
                         <div style={{ background: "rgba(99,102,241,.06)",
@@ -585,14 +584,14 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Mixed: MC days + Client days */}
+                          {/* Mixed: MC hours + Client hours */}
                           {isMixed && (
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10,
                               background: "rgba(167,139,250,.06)", border: "1px solid rgba(167,139,250,.18)",
                               borderRadius: 9, padding: "10px 12px" }}>
                               {[
-                                { label: "MC Days",     key: "mcDays",     color: "#fcd34d", placeholder: "e.g. 5" },
-                                { label: "Client Days", key: "clientDays", color: "#6ee7b7", placeholder: "e.g. 5" },
+                                { label: "MC Hours",     key: "mcHours",     color: "#fcd34d", placeholder: "e.g. 15.70" },
+                                { label: "Client Hours", key: "clientHours", color: "#6ee7b7", placeholder: "e.g. 79.88" },
                               ].map(f => (
                                 <div key={f.key}>
                                   <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
@@ -622,7 +621,7 @@ export default function App() {
                                 key: "usd",    placeholder: isMixed ? autoUSD || "auto" : "e.g. 400",   color: "#6ee7b7" },
                               { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85", color: "#fcd34d" },
                               { label: isMixed ? "Hours (auto)" : "Hours",
-                                key: "hours",  placeholder: isMixed ? `${(mcD + clD) * HOURS}` : "e.g. 80", color: "#94a3b8" },
+                                key: "hours",  placeholder: isMixed ? `${mcH + clH}` : "e.g. 80", color: "#94a3b8" },
                             ].map(f => (
                               <div key={f.key}>
                                 <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
