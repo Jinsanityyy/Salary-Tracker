@@ -558,10 +558,22 @@ export default function App() {
     return [...map.values()];
   })();
 
-  // Dynamic budget from payslip tracker
-  const upcomingCycles   = ALL_CYCLES.filter(c => c.paidDate >= TODAY);
-  const budgetC1Cycle    = upcomingCycles[0] || null;
-  const budgetC2Cycle    = upcomingCycles[1] || null;
+  // Dynamic budget: find the next month where BOTH type A (C1, paid 5th)
+  // and type B (C2, paid 20th) are still upcoming — avoids mislabeling
+  // a straggler type-B as C1 when it chronologically lands before the next type-A.
+  const firstFullBudgetMonth = (() => {
+    const byMk = {};
+    ALL_CYCLES.forEach(c => {
+      if (c.paidDate < TODAY) return;
+      const mk = `${c.paidYear}-${c.paidMonth}`;
+      if (!byMk[mk]) byMk[mk] = {};
+      byMk[mk][c.type] = c;
+    });
+    const mk = Object.keys(byMk).sort().find(k => byMk[k].A && byMk[k].B);
+    return mk ? byMk[mk] : null;
+  })();
+  const budgetC1Cycle    = firstFullBudgetMonth?.A || null;
+  const budgetC2Cycle    = firstFullBudgetMonth?.B || null;
   const budgetC1Data     = budgetC1Cycle ? getCycleData(budgetC1Cycle) : null;
   const budgetC2Data     = budgetC2Cycle ? getCycleData(budgetC2Cycle) : null;
   const budgetC1         = Math.round(budgetC1Data?.php ?? BUDGET_DATA.income.c1);
