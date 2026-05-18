@@ -29,7 +29,7 @@ function workdaysBetween(start, end) {
 // ─── Build all pay cycles ─────────────────────────────────────────────────────
 function buildCycles() {
   const cycles = [];
-  const slots = [{ y: 2025, m: 11, type: "A" }];
+  const slots = [{ y: 2025, m: 11, type: "A" }, { y: 2025, m: 11, type: "B" }];
   for (let m = 0; m <= 11; m++) {
     slots.push({ y: 2026, m, type: "A" });
     slots.push({ y: 2026, m, type: "B" });
@@ -103,10 +103,7 @@ function buildCycles() {
 const ALL_CYCLES = buildCycles();
 
 // ─── Known locked payslips ────────────────────────────────────────────────────
-const LOCKED_PAYSLIPS = {
-  "2026-1-B": { php: 16029.90, usd: 270, fxRate: 59.37, hours: 72, locked: true },
-  "2026-3-A": { php: 22570,    usd: 370, fxRate: 61.00, hours: 80, locked: true },
-};
+const LOCKED_PAYSLIPS = {};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TODAY = new Date(2026, 4, 18);
