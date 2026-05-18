@@ -569,7 +569,13 @@ export default function App() {
       if (!byMk[mk]) byMk[mk] = {};
       byMk[mk][c.type] = c;
     });
-    const mk = Object.keys(byMk).sort().find(k => byMk[k].A && byMk[k].B);
+    const mk = Object.keys(byMk)
+      .sort((a, b) => {
+        const [ay, am] = a.split("-").map(Number);
+        const [by, bm] = b.split("-").map(Number);
+        return ay !== by ? ay - by : am - bm;
+      })
+      .find(k => byMk[k].A && byMk[k].B);
     return mk ? byMk[mk] : null;
   })();
   const budgetC1Cycle    = firstFullBudgetMonth?.A || null;
