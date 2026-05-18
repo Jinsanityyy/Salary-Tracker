@@ -272,8 +272,8 @@ export default function App() {
     });
   }
 
-  function saveActual(key) {
-    const p = parseFloat(editVal.php);
+  function saveActual(key, phpOverride) {
+    const p = parseFloat(phpOverride || editVal.php);
     if (!p || p <= 0) return;
     const isMixed   = editVal.rateType === "mixed";
     const mcHours   = parseFloat(editVal.mcHours)     || 0;
@@ -554,7 +554,14 @@ export default function App() {
                       const clH  = parseFloat(editVal.clientHours) || 0;
                       const autoUSD = isMixed
                         ? (mcH * MASTER_RATE + clH * CLIENT_RATE).toFixed(2)
+                        : editVal.rateType === "mc"
+                          ? ((parseFloat(editVal.hours) || 0) * MASTER_RATE).toFixed(2)
+                          : ((parseFloat(editVal.hours) || 0) * CLIENT_RATE).toFixed(2);
+                      const displayUSD = editVal.usd || autoUSD;
+                      const autoPhp = displayUSD && editVal.fxRate
+                        ? Math.round(parseFloat(displayUSD) * parseFloat(editVal.fxRate))
                         : "";
+                      const displayPhp = editVal.php || (autoPhp > 0 ? String(autoPhp) : "");
                       return (
                         <div style={{ background: "rgba(99,102,241,.06)",
                           borderTop: "1px solid rgba(99,102,241,.2)", padding: "13px 14px" }}>
@@ -626,8 +633,8 @@ export default function App() {
                               <div key={f.key}>
                                 <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
                                 <input type="number" placeholder={f.placeholder}
-                                  value={f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
-                                  onChange={e => setEditVal(p => ({ ...p, [f.key]: e.target.value }))}
+                                  value={f.key === "php" ? displayPhp : f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
+                                  onChange={e => handleEditChange(f.key, e.target.value)}
                                   style={{ width: "100%", background: "rgba(255,255,255,.05)",
                                     border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
                                     fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
@@ -636,7 +643,7 @@ export default function App() {
                           </div>
 
                           <div style={{ display: "flex", gap: 8 }}>
-                            <button className="btn" onClick={() => saveActual(cycle.key)} style={{
+                            <button className="btn" onClick={() => saveActual(cycle.key, displayPhp)} style={{
                               background: "rgba(16,185,129,.15)", border: "1px solid rgba(16,185,129,.35)",
                               borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#6ee7b7" }}>
                               ✓ Save Payslip
