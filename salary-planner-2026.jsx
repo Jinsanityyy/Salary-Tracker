@@ -344,8 +344,8 @@ function CutoffCard({ title, income, items, carryOver, cardKey }) {
   const flexTotal    = flexItems.reduce((a, b) => a + b.amount, 0);
   const savingsTotal = savingsItems.reduce((a, b) => a + b.amount, 0);
 
-  const available    = income + (carryOver || 0);
-  const afterBills   = available - billsTotal;
+  // Use actual income only — carry-over is estimated, not guaranteed
+  const afterBills   = income - billsTotal;
   const afterFlex    = afterBills - flexTotal;
   const inPocket     = afterFlex - savingsTotal;
 
@@ -369,13 +369,12 @@ function CutoffCard({ title, income, items, carryOver, cardKey }) {
   return (
     <div style={{ background: "#0d1119", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden" }}>
 
-      {/* ── Header: title + sahod only ── */}
+      {/* ── Header: actual income only, no carry-over ── */}
       <div style={{ padding: "16px 18px 14px" }}>
         <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <div style={{ fontSize: 10, color: "#64748b" }}>SAHOD</div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 700 }}>₱{available.toLocaleString()}</div>
-          {carryOver > 0 && <div style={{ fontSize: 10, color: "#6366f1", marginLeft: 4 }}>+₱{carryOver.toLocaleString()} carry-over</div>}
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 700 }}>₱{income.toLocaleString()}</div>
         </div>
       </div>
 
@@ -445,7 +444,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey }) {
           ₱{inPocket.toLocaleString()}
         </div>
         <div style={{ fontSize: 10, color: "#475569", marginTop: 4 }}>
-          {Math.round((inPocket / available) * 100)}% ng iyong sahod na ₱{available.toLocaleString()}
+          {Math.round((inPocket / income) * 100)}% ng iyong sahod na ₱{income.toLocaleString()}
         </div>
       </div>
     </div>
@@ -1138,7 +1137,7 @@ export default function App() {
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-              <span>₱{dynamicCarryOver.toLocaleString()} carry-over →</span>
+              <span>~₱{dynamicCarryOver.toLocaleString()} estimated carry-over (hindi guaranteed)</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
             <CutoffCard
