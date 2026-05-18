@@ -169,32 +169,33 @@ function getRateColor(label) {
 }
 
 // ─── Themes ───────────────────────────────────────────────────────────────────
+/* NOTE: these values are RAW hex/rgba — never replace with CSS vars here */
 const THEMES = {
   midnight: {
-    bg: "#080d1c", bgCard: "var(--card)", bgSurface: "rgba(255,255,255,0.025)",
-    bgRaised: "var(--raised)", border: "var(--bdr)",
+    bg: "#080d1c", bgCard: "#070e20", bgSurface: "rgba(255,255,255,0.025)",
+    bgRaised: "rgba(10,20,45,0.8)", border: "rgba(255,255,255,0.06)",
     borderSub: "rgba(255,255,255,0.04)",
-    t1: "var(--fg)", t2: "var(--fg2)", t3: "var(--fg3)", t4: "var(--fg4)", t5: "var(--fg5)",
+    t1: "#e2e8f0", t2: "#8b9eb3", t3: "#4d7099", t4: "#2d4a6b", t5: "#1e3a5f",
     navBg: "rgba(6,9,18,0.98)",
     headerBg: "linear-gradient(145deg,rgba(59,130,246,.1) 0%,rgba(20,184,166,.06) 100%)",
-    teal: "var(--teal)", blue: "var(--blue)", amr: "var(--amr)", amrLt: "var(--amr-lt)",
-    rose: "var(--rose)", grn: "var(--grn)", prp: "var(--prp)",
+    teal: "#5eead4", blue: "#93c5fd", amr: "#fcd34d", amrLt: "#fde68a",
+    rose: "#fda4af", grn: "#86efac", prp: "#c4b5fd",
   },
   oled: {
     bg: "#000000", bgCard: "#060608", bgSurface: "rgba(255,255,255,0.018)",
     bgRaised: "rgba(12,12,18,0.95)", border: "rgba(255,255,255,0.05)",
-    borderSub: "var(--surface)",
-    t1: "var(--fg)", t2: "#7a93ad", t3: "#365070", t4: "#1f3450", t5: "#0f2030",
+    borderSub: "rgba(255,255,255,0.03)",
+    t1: "#f1f5f9", t2: "#7a93ad", t3: "#365070", t4: "#1f3450", t5: "#0f2030",
     navBg: "rgba(0,0,0,0.99)",
     headerBg: "linear-gradient(145deg,rgba(20,184,166,.07) 0%,rgba(59,130,246,.05) 100%)",
-    teal: "var(--teal)", blue: "var(--blue)", amr: "var(--amr)", amrLt: "var(--amr-lt)",
-    rose: "var(--rose)", grn: "var(--grn)", prp: "var(--prp)",
+    teal: "#5eead4", blue: "#93c5fd", amr: "#fcd34d", amrLt: "#fde68a",
+    rose: "#fda4af", grn: "#86efac", prp: "#c4b5fd",
   },
   light: {
     bg: "#f0f4f8", bgCard: "#ffffff", bgSurface: "rgba(0,0,0,0.02)",
     bgRaised: "rgba(255,255,255,0.9)", border: "rgba(15,23,42,0.08)",
     borderSub: "rgba(15,23,42,0.05)",
-    t1: "#0f172a", t2: "#475569", t3: "#64748b", t4: "var(--fg2)", t5: "var(--fg2)",
+    t1: "#0f172a", t2: "#475569", t3: "#64748b", t4: "#94a3b8", t5: "#cbd5e1",
     navBg: "rgba(240,244,248,0.98)",
     headerBg: "linear-gradient(145deg,rgba(59,130,246,.06) 0%,rgba(20,184,166,.04) 100%)",
     teal: "#0d9488", blue: "#1d4ed8", amr: "#a16207", amrLt: "#854d0e",
