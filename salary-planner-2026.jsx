@@ -122,17 +122,17 @@ const BUDGET_DATA = {
   ],
   tasks: [
     { week: 1, label: "Audit last 30 days of GrabFood orders",        done: false },
-    { week: 1, label: "Check CC: balance, interest rate, min payment", done: false },
+    { week: 1, label: "Review CC balance and plan minimum payments", done: false },
     { week: 1, label: "Delete or hide GrabFood app",                   done: false },
     { week: 1, label: "Big grocery run — ₱2,500 for 2 weeks",         done: false },
     { week: 2, label: "Open separate savings account (Tonik/Maya)",    done: false },
     { week: 2, label: "Pay house + internet + grocery first on C1",    done: false },
     { week: 2, label: "Cook at home min 5 days this week",             done: false },
     { week: 2, label: "Track every peso in notes or spreadsheet",      done: false },
-    { week: 3, label: "Zero food delivery week — full challenge",      done: false },
-    { week: 3, label: "Midpoint review: where did you overspend?",    done: false },
+    { week: 3, label: "Cook at home all week — build the habit",       done: false },
+    { week: 3, label: "Midpoint check-in: review your spending",       done: false },
     { week: 3, label: "Adjust meals to budget proteins if needed",     done: false },
-    { week: 4, label: "Pay CC ₱8,950 — no partial, no excuses",       done: false },
+    { week: 4, label: "Make CC payment — stay on track",               done: false },
     { week: 4, label: "Transfer ₱3,000 to savings on C2",             done: false },
     { week: 4, label: "Calculate actual vs target savings",            done: false },
     { week: 4, label: "Reward: one GrabFood order (₱400 max)",        done: false },
@@ -144,11 +144,11 @@ const CC_LOANS = [
 ];
 
 const TYPE_COLORS = {
-  fixed:    { bg: "rgba(99,102,241,0.15)",  border: "#6366f1", text: "#a5b4fc" },
-  variable: { bg: "rgba(251,191,36,0.12)",  border: "#f59e0b", text: "#fcd34d" },
-  flex:     { bg: "rgba(34,197,94,0.1)",    border: "#22c55e", text: "#86efac" },
-  savings:  { bg: "rgba(16,185,129,0.15)",  border: "#10b981", text: "#6ee7b7" },
-  debt:     { bg: "rgba(239,68,68,0.12)",   border: "#ef4444", text: "#fca5a5" },
+  fixed:    { bg: "rgba(59,130,246,0.12)",  border: "#3b82f6", text: "#93c5fd" },
+  variable: { bg: "rgba(245,158,11,0.1)",   border: "#f59e0b", text: "#fde68a" },
+  flex:     { bg: "rgba(20,184,166,0.1)",   border: "#14b8a6", text: "#5eead4" },
+  savings:  { bg: "rgba(13,148,136,0.14)",  border: "#0d9488", text: "#5eead4" },
+  debt:     { bg: "rgba(244,63,94,0.1)",    border: "#f43f5e", text: "#fda4af" },
 };
 const TYPE_LABELS = { fixed: "Fixed", variable: "Variable", flex: "Flex", savings: "Savings", debt: "Debt" };
 
@@ -158,9 +158,9 @@ const php   = n => "₱" + Math.round(n).toLocaleString();
 const usd   = n => "$" + Number(n).toFixed(2);
 
 const RATE_COLORS = {
-  "Client $5.50/hr":      { t: "#6ee7b7", bg: "rgba(16,185,129,0.13)",  b: "rgba(16,185,129,0.3)" },
-  "Masterclass $3.75/hr": { t: "#fcd34d", bg: "rgba(251,191,36,0.1)",   b: "rgba(251,191,36,0.3)" },
-  "Mixed":                { t: "#c4b5fd", bg: "rgba(167,139,250,0.11)", b: "rgba(167,139,250,0.3)" },
+  "Client $5.50/hr":      { t: "#5eead4", bg: "rgba(20,184,166,0.13)",  b: "rgba(20,184,166,0.3)" },
+  "Masterclass $3.75/hr": { t: "#fde68a", bg: "rgba(245,158,11,0.1)",   b: "rgba(245,158,11,0.3)" },
+  "Mixed":                { t: "#93c5fd", bg: "rgba(59,130,246,0.11)",  b: "rgba(59,130,246,0.3)" },
 };
 function getRateColor(label) {
   if (RATE_COLORS[label]) return RATE_COLORS[label];
@@ -771,16 +771,16 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "#070a10", color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
+    <div style={{ minHeight: "100vh", background: "#080d1c", color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb { background: #0f2040; border-radius: 99px; }
         input, button { font-family: 'DM Sans', sans-serif; }
         .btn { cursor: pointer; transition: all .15s; }
         .card-tap { cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-        .card-tap:active { background: rgba(255,255,255,0.05) !important; }
+        .card-tap:active { background: rgba(59,130,246,0.05) !important; }
         .task-row { cursor: pointer; transition: all 0.15s; }
         .task-row:active { opacity: 0.8; }
         .nav-btn { cursor: pointer; transition: color 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
@@ -860,14 +860,14 @@ export default function App() {
       )}
 
       {/* ── HEADER ── */}
-      <div style={{ background: "linear-gradient(145deg, rgba(99,102,241,.12) 0%, rgba(16,185,129,.03) 100%)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "22px 18px 18px" }}>
+      <div style={{ background: "linear-gradient(145deg, rgba(59,130,246,.1) 0%, rgba(20,184,166,.06) 100%)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "22px 18px 18px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          <div style={{ fontSize: 9, letterSpacing: 3, color: "#475569", textTransform: "uppercase", marginBottom: 4 }}>
-            Global Medical Staffing · 2026
+          <div style={{ fontSize: 9, letterSpacing: 3, color: "#4d7099", textTransform: "uppercase", marginBottom: 4 }}>
+            Financial Recovery · 2026
           </div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#f1f5f9", marginBottom: 2 }}>
-            Payslip <span style={{ color: "#6366f1" }}>Tracker</span>
-            <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#475569", fontWeight: 400, marginLeft: 10 }}>+ Budget</span>
+            Fin<span style={{ color: "#14b8a6" }}>Heal</span>
+            <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#4d7099", fontWeight: 400, marginLeft: 10 }}>Recover & Rebuild</span>
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginBottom: 14 }}>
             11–25 → paid 5th · 26–10 → paid 20th · US holidays · 8h/day
@@ -875,7 +875,7 @@ export default function App() {
 
           {/* FX row */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-            <div style={{ background: "rgba(16,185,129,.09)", border: "1px solid rgba(16,185,129,.22)", borderRadius: 8, padding: "5px 11px", fontSize: 11 }}>
+            <div style={{ background: "rgba(20,184,166,.09)", border: "1px solid rgba(20,184,166,.22)", borderRadius: 8, padding: "5px 11px", fontSize: 11 }}>
               <span style={{ color: "#64748b" }}>FX </span>
               <span style={{ fontFamily: "'DM Mono', monospace", color: "#6ee7b7", fontWeight: 600 }}>₱{LIVE_FX}</span>
               <span style={{ color: "#334155", fontSize: 9, marginLeft: 4 }}>May 18</span>
@@ -908,12 +908,12 @@ export default function App() {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
             {[
-              { label: "Year Gross",   val: php(totalPhp),      sub: `${totalCycles} cycles`,       color: "#a5b4fc" },
-              { label: "Confirmed",    val: php(confirmedPhp),  sub: `${confirmedCount} in`,        color: "#6ee7b7" },
+              { label: "Year Gross",   val: php(totalPhp),      sub: `${totalCycles} cycles`,       color: "#93c5fd" },
+              { label: "Confirmed",    val: php(confirmedPhp),  sub: `✦ ${confirmedCount} confirmed`, color: "#5eead4" },
               { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} left`, color: "#fcd34d" },
-              { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#10b981" },
+              { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#14b8a6" },
             ].map((s, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 10, padding: "9px 10px" }}>
+              <div key={i} style={{ background: "rgba(10,20,45,0.8)", border: "1px solid rgba(56,189,248,0.1)", borderRadius: 10, padding: "9px 10px" }}>
                 <div style={{ fontSize: 8, color: "#64748b", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
                 <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: s.color, fontWeight: 600 }}>{s.val}</div>
                 <div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{s.sub}</div>
@@ -922,11 +922,11 @@ export default function App() {
           </div>
 
           <div style={{ marginTop: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#475569", marginBottom: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#1e3a5f", marginBottom: 5 }}>
               <span>Payslips confirmed</span>
-              <span style={{ fontFamily: "'DM Mono', monospace", color: "#6366f1" }}>{confirmedCount}/{totalCycles}</span>
+              <span style={{ fontFamily: "'DM Mono', monospace", color: "#3b82f6" }}>{confirmedCount}/{totalCycles}</span>
             </div>
-            <Bar pct={(confirmedCount / totalCycles) * 100} color="#6366f1" h={4} />
+            <Bar pct={(confirmedCount / totalCycles) * 100} color="#3b82f6" h={4} />
           </div>
         </div>
       </div>
@@ -960,7 +960,7 @@ export default function App() {
                     {/* Month group header */}
                     <div onClick={() => toggleMonth(group.mk)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 6px 8px", cursor: "pointer", userSelect: "none" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: hasCurrent ? "#a5b4fc" : hasActual ? "#6ee7b7" : "#1e293b", border: hasCurrent || hasActual ? "none" : "1px solid #334155" }} />
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: hasCurrent ? "#93c5fd" : hasActual ? "#5eead4" : "#0f1f3d", border: hasCurrent || hasActual ? "none" : "1px solid #1e3a5f" }} />
                         <span style={{ fontSize: 13, fontWeight: 600, color: hasCurrent ? "#e2e8f0" : hasActual ? "#94a3b8" : "#64748b" }}>
                           {group.label}
                         </span>
@@ -975,7 +975,7 @@ export default function App() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {isCollapsed && (
-                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: hasActual ? "#6ee7b7" : "#475569" }}>
+                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: hasActual ? "#5eead4" : "#3a5a80" }}>
                             {php(totalGrpPhp)}
                           </span>
                         )}
@@ -1048,7 +1048,7 @@ export default function App() {
 
                                 {/* Amount row */}
                                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 600, color: d.isLocked ? "#a5b4fc" : d.isActual ? "#6ee7b7" : isNext ? "#a5b4fc" : "#64748b" }}>
+                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 600, color: d.isLocked ? "#93c5fd" : d.isActual ? "#5eead4" : isNext ? "#93c5fd" : "#4d7099" }}>
                                     {php(d.php)}
                                   </div>
                                   <div style={{ fontSize: 10, color: "#64748b" }}>
@@ -1606,8 +1606,8 @@ export default function App() {
               ))}
             </div>
 
-            <div style={{ fontSize: 13, color: "#64748b" }}>
-              {{ 1: "🔍 Assess & Stop the Bleeding", 2: "⚙️ Implement the System", 3: "💪 Survive on the Plan", 4: "🔒 Lock In & Reflect" }[activeWeek]}
+            <div style={{ fontSize: 13, color: "#4d7099" }}>
+              {{ 1: "✦ Organize & Heal Your Finances", 2: "⚙️ Implement the System", 3: "💪 Survive on the Plan", 4: "🔒 Lock In & Reflect" }[activeWeek]}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1654,7 +1654,7 @@ export default function App() {
       {/* ── BOTTOM NAV ── */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(7,10,16,0.97)",
+        background: "rgba(7,11,22,0.97)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
@@ -1668,7 +1668,7 @@ export default function App() {
               flex: 1, background: "none", border: "none", outline: "none",
               padding: "10px 4px 8px",
               display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              color: isActive ? "#a5b4fc" : "#475569",
+              color: isActive ? "#5eead4" : "#3a5a80",
               position: "relative",
             }}>
               {/* Active indicator bar */}
