@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Rates ────────────────────────────────────────────────────────────────────
 const CLIENT_RATE = 5.50;
@@ -8,26 +8,15 @@ const LIVE_FX     = 61.739;
 
 // ─── US Federal Holidays 2025–2026 ───────────────────────────────────────────
 const US_HOLIDAYS = new Set([
-  "2025-11-27",
-  "2025-12-25",
-  "2026-01-01",
-  "2026-01-19",
-  "2026-02-16",
-  "2026-05-25",
-  "2026-06-19",
-  "2026-07-03",
-  "2026-09-07",
-  "2026-10-12",
-  "2026-11-11",
-  "2026-11-26",
-  "2026-12-25",
+  "2025-11-27", "2025-12-25", "2026-01-01", "2026-01-19", "2026-02-16",
+  "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07", "2026-10-12",
+  "2026-11-11", "2026-11-26", "2026-12-25",
 ]);
 
 function isWorkday(date) {
   const dow = date.getDay();
   if (dow === 0 || dow === 6) return false;
-  const s = date.toISOString().slice(0, 10);
-  return !US_HOLIDAYS.has(s);
+  return !US_HOLIDAYS.has(date.toISOString().slice(0, 10));
 }
 
 function workdaysBetween(start, end) {
@@ -115,10 +104,8 @@ const ALL_CYCLES = buildCycles();
 
 // ─── Known locked payslips ────────────────────────────────────────────────────
 const LOCKED_PAYSLIPS = {
-  "2026-1-B": { php: 16029.90, usd: 270,  fxRate: 59.37, hours: 72, locked: true,
-    note: "Masterclass $3.75 × 72hrs" },
-  "2026-3-A": { php: 22570,    usd: 370,  fxRate: 61.00, hours: 80, locked: true,
-    note: "Client $5.50 × 80hrs" },
+  "2026-1-B": { php: 16029.90, usd: 270, fxRate: 59.37, hours: 72, locked: true },
+  "2026-3-A": { php: 22570,    usd: 370, fxRate: 61.00, hours: 80, locked: true },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -186,7 +173,6 @@ function Bar({ pct, color = "#6366f1", h = 5 }) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // Merge localStorage user edits on top of hardcoded locked payslips
   const [actuals, setActuals] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("salary_planner_actuals_v2") || "{}");
@@ -196,20 +182,14 @@ export default function App() {
     }
   });
 
-  const [editing, setEditing]       = useState(null);
-  const [editVal, setEditVal]       = useState({ php: "", usd: "", fxRate: "", hours: "" });
-  const [tab, setTab]               = useState("timeline");
+  const [editing, setEditing]         = useState(null);
+  const [editVal, setEditVal]         = useState({ php: "", usd: "", fxRate: "", hours: "" });
+  const [tab, setTab]                 = useState("timeline");
   const [useCustomFx, setUseCustomFx] = useState(false);
-  const [customFx, setCustomFx]     = useState("");
-  const [toast, setToast]           = useState(null);
-  const [uploadingKey, setUploadingKey] = useState(null);
-  const [uploadErrors, setUploadErrors] = useState({});
-  const [apiKey, setApiKey]         = useState(import.meta.env.VITE_GOOGLE_AI_KEY || "");
-  const [showApiKey, setShowApiKey] = useState(false);
-  const fileInputRef                = useRef(null);
-  const uploadTargetRef             = useRef(null);
+  const [customFx, setCustomFx]       = useState("");
+  const [toast, setToast]             = useState(null);
 
-  // Persist only non-locked user actuals to localStorage on every change
+  // Auto-save to localStorage on every change (locked entries excluded)
   useEffect(() => {
     try {
       const toStore = Object.fromEntries(
@@ -220,9 +200,7 @@ export default function App() {
   }, [actuals]);
 
   const effectiveFx = useCustomFx && parseFloat(customFx) > 0 ? parseFloat(customFx) : LIVE_FX;
-
-  // Dynamically find the first cycle whose paidDate is >= TODAY
-  const nextPayKey = ALL_CYCLES.find(c => c.paidDate >= TODAY)?.key;
+  const nextPayKey  = ALL_CYCLES.find(c => c.paidDate >= TODAY)?.key;
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
@@ -232,20 +210,13 @@ export default function App() {
   function getCycleData(cycle) {
     const actual = actuals[cycle.key];
     if (actual) return {
-      php:      actual.php,
-      usd:      actual.usd,
-      fxUsed:   actual.fxRate,
-      hours:    actual.hours,
-      isActual: true,
-      isLocked: !!actual.locked,
+      php: actual.php, usd: actual.usd, fxUsed: actual.fxRate,
+      hours: actual.hours, isActual: true, isLocked: !!actual.locked,
     };
     return {
-      php:      cycle.baseUSD * effectiveFx,
-      usd:      cycle.baseUSD,
-      fxUsed:   effectiveFx,
-      hours:    cycle.days * HOURS,
-      isActual: false,
-      isLocked: false,
+      php: cycle.baseUSD * effectiveFx, usd: cycle.baseUSD,
+      fxUsed: effectiveFx, hours: cycle.days * HOURS,
+      isActual: false, isLocked: false,
     };
   }
 
@@ -273,82 +244,6 @@ export default function App() {
     showToast("Removed", "error");
   }
 
-  // ─── Upload / AI Auto-fill ────────────────────────────────────────────────
-  function handleUploadClick(key) {
-    uploadTargetRef.current = key;
-    fileInputRef.current.value = "";
-    fileInputRef.current.click();
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result.split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function handleFileChange(e) {
-    const file = e.target.files[0];
-    const key  = uploadTargetRef.current;
-    if (!file || !key) return;
-
-    if (!apiKey.trim()) {
-      setUploadErrors(prev => ({ ...prev, [key]: "Enter your Groq key (🔑 Groq Key button above)" }));
-      return;
-    }
-
-    setUploadingKey(key);
-    setUploadErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
-
-    try {
-      const base64    = await fileToBase64(file);
-      const mediaType = file.type || "image/jpeg";
-
-      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey.trim()}`,
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
-          max_tokens: 512,
-          temperature: 0,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image_url", image_url: { url: `data:${mediaType};base64,${base64}` } },
-              { type: "text", text: `Extract payslip data and respond with JSON only, no markdown:\n{"php":<total PHP amount as number>,"usd":<USD amount as number>,"fxRate":<exchange rate as number>,"hours":<total hours worked as number>}\nUse null for any field not found.` },
-            ],
-          }],
-        }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `API error ${resp.status}`);
-      }
-
-      const data    = await resp.json();
-      const rawText = data.choices?.[0]?.message?.content || "";
-      const extracted = JSON.parse(rawText.replace(/```json|```/g, "").trim());
-
-      setEditVal({
-        php:    extracted.php    ?? "",
-        usd:    extracted.usd    ?? "",
-        fxRate: extracted.fxRate ?? "",
-        hours:  extracted.hours  ?? "",
-      });
-      setEditing(key);
-    } catch (err) {
-      setUploadErrors(prev => ({ ...prev, [key]: err.message || "Failed to parse payslip" }));
-    } finally {
-      setUploadingKey(null);
-    }
-  }
-
   // Totals
   const confirmedCount = Object.keys(actuals).length;
   const totalCycles    = ALL_CYCLES.length;
@@ -356,7 +251,7 @@ export default function App() {
   const confirmedPhp   = ALL_CYCLES.filter(c => actuals[c.key]).reduce((a, c) => a + actuals[c.key].php, 0);
   const estimatedPhp   = totalPhp - confirmedPhp;
 
-  // Group by paidMonth for summary tab
+  // Group by paid month for summary tab
   const byMonth = {};
   ALL_CYCLES.forEach(c => {
     const mk = `${c.paidYear}-${c.paidMonth}`;
@@ -384,7 +279,6 @@ export default function App() {
         @keyframes fu { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fu { animation: fu .3s ease forwards; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
       `}</style>
 
@@ -398,21 +292,11 @@ export default function App() {
           color: toast.type === "error" ? "#fca5a5" : "#6ee7b7",
           fontFamily: "'DM Mono', monospace", zIndex: 9999,
           animation: "toastIn .22s ease forwards",
-          boxShadow: "0 4px 24px rgba(0,0,0,.5)",
-          whiteSpace: "nowrap",
+          boxShadow: "0 4px 24px rgba(0,0,0,.5)", whiteSpace: "nowrap",
         }}>
           {toast.msg}
         </div>
       )}
-
-      {/* Hidden file input for payslip uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,application/pdf"
-        style={{ display: "none" }}
-        onChange={handleFileChange}
-      />
 
       {/* ── HEADER ── */}
       <div style={{ background: "linear-gradient(145deg, rgba(99,102,241,.14) 0%, rgba(16,185,129,.04) 100%)",
@@ -428,7 +312,7 @@ export default function App() {
             Cycle: 11–25 → paid 5th · 26–10 → paid 20th · US holidays excluded · 8h/day
           </div>
 
-          {/* FX toggle + API key */}
+          {/* FX controls */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
             <div style={{ background: "rgba(16,185,129,.1)", border: "1px solid rgba(16,185,129,.25)",
               borderRadius: 9, padding: "6px 12px", fontSize: 11 }}>
@@ -450,33 +334,13 @@ export default function App() {
                   borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#fcd34d",
                   width: 100, fontFamily: "'DM Mono', monospace" }} />
             )}
-
-            {/* Google AI key (free — aistudio.google.com) */}
-            <button className="btn" onClick={() => setShowApiKey(p => !p)} style={{
-              background: showApiKey ? "rgba(167,139,250,.12)" : "rgba(255,255,255,.04)",
-              border: `1px solid ${showApiKey ? "rgba(167,139,250,.4)" : "rgba(255,255,255,.08)"}`,
-              borderRadius: 8, padding: "5px 11px", fontSize: 11,
-              color: showApiKey ? "#c4b5fd" : "#475569" }}>
-              🔑 {apiKey ? "Groq Key ✓" : "Groq Key (free)"}
-            </button>
-            {showApiKey && (
-              <input
-                type="password"
-                placeholder="gsk_… (console.groq.com)"
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(167,139,250,.3)",
-                  borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#c4b5fd",
-                  width: 210, fontFamily: "'DM Mono', monospace" }}
-              />
-            )}
           </div>
 
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 9 }}>
             {[
-              { label: "Year Gross",     val: php(totalPhp),      sub: `${totalCycles} payslips`,          color: "#a5b4fc" },
-              { label: "Confirmed",      val: php(confirmedPhp),  sub: `${confirmedCount} payslips in`,    color: "#6ee7b7" },
+              { label: "Year Gross",     val: php(totalPhp),      sub: `${totalCycles} payslips`,                   color: "#a5b4fc" },
+              { label: "Confirmed",      val: php(confirmedPhp),  sub: `${confirmedCount} payslips in`,             color: "#6ee7b7" },
               { label: "Estimated",      val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} remaining`, color: "#fcd34d" },
               { label: "Per day client", val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#10b981" },
             ].map((s, i) => (
@@ -517,7 +381,6 @@ export default function App() {
         {/* ════ TIMELINE ════ */}
         {tab === "timeline" && (
           <div className="fu">
-            {/* Legend */}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
               {Object.entries(RATE_COLORS).map(([label, c]) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: c.t }}>
@@ -540,9 +403,8 @@ export default function App() {
                     borderRadius: 14, overflow: "hidden",
                     opacity: isPast && !d.isActual ? 0.7 : 1,
                   }}>
-                    {/* Main row — 4 columns: info | amount | upload | edit/lock */}
                     <div style={{ padding: "12px 14px", display: "grid",
-                      gridTemplateColumns: "1fr auto auto auto", gap: 10, alignItems: "center" }}>
+                      gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "center" }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
                           <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>
@@ -559,20 +421,16 @@ export default function App() {
                             Paid: <span style={{ color: "#94a3b8" }}>{cycle.paidLabel}</span>
                           </span>
                           <span style={{ color: "#334155" }}>·</span>
-                          <span style={{ fontSize: 10, color: "#475569" }}>
-                            {d.hours}h ({cycle.days}d)
-                          </span>
+                          <span style={{ fontSize: 10, color: "#475569" }}>{d.hours}h ({cycle.days}d)</span>
                           <span style={{ color: "#334155" }}>·</span>
                           <RateBadge label={cycle.rateNote} />
                           <StatusBadge isActual={d.isActual} isLocked={d.isLocked} />
                         </div>
                       </div>
 
-                      {/* Amount */}
                       <div style={{ textAlign: "right", minWidth: 90 }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15,
-                          color: d.isLocked ? "#a5b4fc" : d.isActual ? "#6ee7b7" : isNext ? "#a5b4fc" : "#64748b",
-                          fontWeight: 600 }}>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 600,
+                          color: d.isLocked ? "#a5b4fc" : d.isActual ? "#6ee7b7" : isNext ? "#a5b4fc" : "#64748b" }}>
                           {php(d.php)}
                         </div>
                         <div style={{ fontSize: 9, color: "#334155" }}>
@@ -580,30 +438,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Upload button (non-locked only) or spacer */}
-                      {!d.isLocked ? (
-                        <button
-                          className="btn"
-                          onClick={() => handleUploadClick(cycle.key)}
-                          disabled={uploadingKey === cycle.key}
-                          title="Upload payslip image or PDF for AI auto-fill"
-                          style={{
-                            background: "rgba(167,139,250,.1)",
-                            border: "1px solid rgba(167,139,250,.25)",
-                            borderRadius: 8, padding: "5px 9px", fontSize: 13,
-                            color: uploadingKey === cycle.key ? "#6b7280" : "#c4b5fd",
-                            cursor: uploadingKey === cycle.key ? "not-allowed" : "pointer",
-                            lineHeight: 1,
-                          }}>
-                          {uploadingKey === cycle.key
-                            ? <span style={{ display: "inline-block", animation: "spin 0.7s linear infinite" }}>⟳</span>
-                            : "📎"}
-                        </button>
-                      ) : (
-                        <span />
-                      )}
-
-                      {/* Edit button or lock icon */}
                       {!d.isLocked ? (
                         <button className="btn" onClick={() => {
                           if (isEditing) { setEditing(null); return; }
@@ -621,15 +455,6 @@ export default function App() {
                         <span style={{ fontSize: 10, color: "#475569", padding: "5px 6px" }}>🔒</span>
                       )}
                     </div>
-
-                    {/* Upload error message */}
-                    {uploadErrors[cycle.key] && (
-                      <div style={{ marginInline: 14, marginBottom: 10,
-                        background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)",
-                        borderRadius: 8, padding: "7px 11px", fontSize: 10, color: "#fca5a5" }}>
-                        ⚠ {uploadErrors[cycle.key]}
-                      </div>
-                    )}
 
                     {/* Mixed breakdown */}
                     {cycle.isMixed && d.isLocked && cycle.mixedBreakdown && (
@@ -661,10 +486,10 @@ export default function App() {
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
                           {[
-                            { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750",  color: "#a5b4fc" },
-                            { label: "USD Amount",   key: "usd",    placeholder: "e.g. 400",    color: "#6ee7b7" },
-                            { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85",  color: "#fcd34d" },
-                            { label: "Hours",        key: "hours",  placeholder: "e.g. 80",     color: "#94a3b8" },
+                            { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750", color: "#a5b4fc" },
+                            { label: "USD Amount",   key: "usd",    placeholder: "e.g. 400",   color: "#6ee7b7" },
+                            { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85", color: "#fcd34d" },
+                            { label: "Hours",        key: "hours",  placeholder: "e.g. 80",    color: "#94a3b8" },
                           ].map(f => (
                             <div key={f.key}>
                               <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
@@ -745,7 +570,6 @@ export default function App() {
               );
             })}
 
-            {/* Year total */}
             <div style={{ background: "rgba(99,102,241,.07)", border: "1px solid rgba(99,102,241,.2)",
               borderRadius: 14, padding: "16px 18px",
               display: "flex", justifyContent: "space-between", alignItems: "center" }}>
