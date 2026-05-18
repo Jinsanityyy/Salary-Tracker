@@ -183,7 +183,7 @@ export default function App() {
   });
 
   const [editing, setEditing]         = useState(null);
-  const [editVal, setEditVal]         = useState({ php: "", usd: "", fxRate: "", hours: "" });
+  const [editVal, setEditVal]         = useState({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
   const [tab, setTab]                 = useState("timeline");
   const [useCustomFx, setUseCustomFx] = useState(false);
   const [customFx, setCustomFx]       = useState("");
@@ -207,15 +207,38 @@ export default function App() {
     setTimeout(() => setToast(null), 2000);
   }
 
+  function rateNoteFromType(rateType, mcDays, clientDays) {
+    if (rateType === "mc")     return "Masterclass $3.75/hr";
+    if (rateType === "client") return "Client $5.50/hr";
+    const mc = parseFloat(mcDays) || 0;
+    const cl = parseFloat(clientDays) || 0;
+    return `Mixed (${mc}d MC + ${cl}d Client)`;
+  }
+
+  function computeUSD(rateType, days, mcDays, clientDays) {
+    if (rateType === "mc")     return (parseFloat(days) || 0) * MASTER_RATE * HOURS;
+    if (rateType === "client") return (parseFloat(days) || 0) * CLIENT_RATE  * HOURS;
+    return (parseFloat(mcDays) || 0) * MASTER_RATE * HOURS
+         + (parseFloat(clientDays) || 0) * CLIENT_RATE * HOURS;
+  }
+
   function getCycleData(cycle) {
     const actual = actuals[cycle.key];
     if (actual) return {
-      php: actual.php, usd: actual.usd, fxUsed: actual.fxRate,
-      hours: actual.hours, isActual: true, isLocked: !!actual.locked,
+      php:      actual.php,
+      usd:      actual.usd,
+      fxUsed:   actual.fxRate,
+      hours:    actual.hours,
+      rateNote: actual.rateType
+        ? rateNoteFromType(actual.rateType, actual.mcDays, actual.clientDays)
+        : cycle.rateNote,
+      isActual: true,
+      isLocked: !!actual.locked,
     };
     return {
       php: cycle.baseUSD * effectiveFx, usd: cycle.baseUSD,
       fxUsed: effectiveFx, hours: cycle.days * HOURS,
+      rateNote: cycle.rateNote,
       isActual: false, isLocked: false,
     };
   }
@@ -223,24 +246,36 @@ export default function App() {
   function saveActual(key) {
     const p = parseFloat(editVal.php);
     if (!p || p <= 0) return;
+    const cycle    = ALL_CYCLES.find(c => c.key === key);
+    const isMixed  = editVal.rateType === "mixed";
+    const mcDays   = parseFloat(editVal.mcDays)     || 0;
+    const clDays   = parseFloat(editVal.clientDays) || 0;
+    const totalDays = isMixed ? mcDays + clDays : (parseFloat(editVal.hours) / HOURS || cycle?.days || 0);
+    const autoUSD  = computeUSD(editVal.rateType, totalDays, mcDays, clDays);
+    const hours    = isMixed ? (mcDays + clDays) * HOURS : (parseFloat(editVal.hours) || totalDays * HOURS);
+
     setActuals(prev => ({
       ...prev,
       [key]: {
-        php:    p,
-        usd:    parseFloat(editVal.usd)    || p / effectiveFx,
-        fxRate: parseFloat(editVal.fxRate) || effectiveFx,
-        hours:  parseFloat(editVal.hours)  || null,
-        locked: false,
+        php:        p,
+        usd:        parseFloat(editVal.usd) || autoUSD,
+        fxRate:     parseFloat(editVal.fxRate) || effectiveFx,
+        hours,
+        rateType:   editVal.rateType,
+        mcDays:     isMixed ? mcDays   : null,
+        clientDays: isMixed ? clDays   : null,
+        locked:     false,
       },
     }));
     setEditing(null);
-    setEditVal({ php: "", usd: "", fxRate: "", hours: "" });
+    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
     showToast("✓ Saved");
   }
 
   function removeActual(key) {
     setActuals(prev => { const n = { ...prev }; delete n[key]; return n; });
     setEditing(null);
+    setEditVal({ php: "", usd: "", fxRate: "", hours: "", rateType: "client", mcDays: "", clientDays: "" });
     showToast("Removed", "error");
   }
 
@@ -423,7 +458,7 @@ export default function App() {
                           <span style={{ color: "#334155" }}>·</span>
                           <span style={{ fontSize: 10, color: "#475569" }}>{d.hours}h ({cycle.days}d)</span>
                           <span style={{ color: "#334155" }}>·</span>
-                          <RateBadge label={cycle.rateNote} />
+                          <RateBadge label={d.rateNote} />
                           <StatusBadge isActual={d.isActual} isLocked={d.isLocked} />
                         </div>
                       </div>
@@ -443,7 +478,15 @@ export default function App() {
                           if (isEditing) { setEditing(null); return; }
                           setEditing(cycle.key);
                           const ex = actuals[cycle.key];
-                          setEditVal({ php: ex?.php || "", usd: ex?.usd || "", fxRate: ex?.fxRate || "", hours: ex?.hours || "" });
+                          setEditVal({
+                            php:        ex?.php        || "",
+                            usd:        ex?.usd        || "",
+                            fxRate:     ex?.fxRate     || "",
+                            hours:      ex?.hours      || "",
+                            rateType:   ex?.rateType   || "client",
+                            mcDays:     ex?.mcDays     || "",
+                            clientDays: ex?.clientDays || "",
+                          });
                         }} style={{
                           background: isEditing ? "rgba(239,68,68,.12)" : "rgba(99,102,241,.12)",
                           border: `1px solid ${isEditing ? "rgba(239,68,68,.3)" : "rgba(99,102,241,.3)"}`,
@@ -478,45 +521,110 @@ export default function App() {
                     )}
 
                     {/* Edit panel */}
-                    {isEditing && (
-                      <div style={{ background: "rgba(99,102,241,.06)",
-                        borderTop: "1px solid rgba(99,102,241,.2)", padding: "13px 14px" }}>
-                        <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
-                          Enter Actual Payslip Values
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
-                          {[
-                            { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750", color: "#a5b4fc" },
-                            { label: "USD Amount",   key: "usd",    placeholder: "e.g. 400",   color: "#6ee7b7" },
-                            { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85", color: "#fcd34d" },
-                            { label: "Hours",        key: "hours",  placeholder: "e.g. 80",    color: "#94a3b8" },
-                          ].map(f => (
-                            <div key={f.key}>
-                              <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
-                              <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
-                                onChange={e => setEditVal(p => ({ ...p, [f.key]: e.target.value }))}
-                                style={{ width: "100%", background: "rgba(255,255,255,.05)",
-                                  border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
-                                  fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                    {isEditing && (() => {
+                      const isMixed = editVal.rateType === "mixed";
+                      const mcD  = parseFloat(editVal.mcDays)     || 0;
+                      const clD  = parseFloat(editVal.clientDays) || 0;
+                      const autoUSD = isMixed
+                        ? (mcD * MASTER_RATE * HOURS + clD * CLIENT_RATE * HOURS).toFixed(2)
+                        : "";
+                      return (
+                        <div style={{ background: "rgba(99,102,241,.06)",
+                          borderTop: "1px solid rgba(99,102,241,.2)", padding: "13px 14px" }}>
+                          <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
+                            Enter Actual Payslip Values
+                          </div>
+
+                          {/* Rate type selector */}
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontSize: 9, color: "#475569", marginBottom: 6 }}>RATE TYPE</div>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {[
+                                { val: "mc",     label: "Masterclass $3.75", color: "#fcd34d", border: "rgba(251,191,36,.4)",  bg: "rgba(251,191,36,.12)" },
+                                { val: "client", label: "Client $5.50",      color: "#6ee7b7", border: "rgba(16,185,129,.4)",  bg: "rgba(16,185,129,.12)" },
+                                { val: "mixed",  label: "Mixed",             color: "#c4b5fd", border: "rgba(167,139,250,.4)", bg: "rgba(167,139,250,.12)" },
+                              ].map(r => (
+                                <button key={r.val} className="btn" onClick={() => setEditVal(p => ({ ...p, rateType: r.val }))}
+                                  style={{
+                                    background: editVal.rateType === r.val ? r.bg : "rgba(255,255,255,.04)",
+                                    border: `1px solid ${editVal.rateType === r.val ? r.border : "rgba(255,255,255,.1)"}`,
+                                    borderRadius: 8, padding: "6px 12px", fontSize: 10,
+                                    color: editVal.rateType === r.val ? r.color : "#475569",
+                                  }}>
+                                  {r.label}
+                                </button>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button className="btn" onClick={() => saveActual(cycle.key)} style={{
-                            background: "rgba(16,185,129,.15)", border: "1px solid rgba(16,185,129,.35)",
-                            borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#6ee7b7" }}>
-                            ✓ Save Payslip
-                          </button>
-                          {actuals[cycle.key] && (
-                            <button className="btn" onClick={() => removeActual(cycle.key)} style={{
-                              background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)",
-                              borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#fca5a5" }}>
-                              Remove
-                            </button>
+                          </div>
+
+                          {/* Mixed: MC days + Client days */}
+                          {isMixed && (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10,
+                              background: "rgba(167,139,250,.06)", border: "1px solid rgba(167,139,250,.18)",
+                              borderRadius: 9, padding: "10px 12px" }}>
+                              {[
+                                { label: "MC Days",     key: "mcDays",     color: "#fcd34d", placeholder: "e.g. 5" },
+                                { label: "Client Days", key: "clientDays", color: "#6ee7b7", placeholder: "e.g. 5" },
+                              ].map(f => (
+                                <div key={f.key}>
+                                  <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
+                                  <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
+                                    onChange={e => setEditVal(p => ({ ...p, [f.key]: e.target.value }))}
+                                    style={{ width: "100%", background: "rgba(255,255,255,.05)",
+                                      border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
+                                      fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                                </div>
+                              ))}
+                              <div>
+                                <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>Auto USD</div>
+                                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#c4b5fd",
+                                  padding: "7px 9px", background: "rgba(255,255,255,.03)",
+                                  border: "1px solid rgba(167,139,250,.2)", borderRadius: 7 }}>
+                                  ${autoUSD || "0.00"}
+                                </div>
+                              </div>
+                            </div>
                           )}
+
+                          {/* PHP, USD, FX Rate, Hours */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+                            {[
+                              { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750", color: "#a5b4fc" },
+                              { label: isMixed ? "USD (auto-filled)" : "USD Amount",
+                                key: "usd",    placeholder: isMixed ? autoUSD || "auto" : "e.g. 400",   color: "#6ee7b7" },
+                              { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85", color: "#fcd34d" },
+                              { label: isMixed ? "Hours (auto)" : "Hours",
+                                key: "hours",  placeholder: isMixed ? `${(mcD + clD) * HOURS}` : "e.g. 80", color: "#94a3b8" },
+                            ].map(f => (
+                              <div key={f.key}>
+                                <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
+                                <input type="number" placeholder={f.placeholder}
+                                  value={f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
+                                  onChange={e => setEditVal(p => ({ ...p, [f.key]: e.target.value }))}
+                                  style={{ width: "100%", background: "rgba(255,255,255,.05)",
+                                    border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
+                                    fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button className="btn" onClick={() => saveActual(cycle.key)} style={{
+                              background: "rgba(16,185,129,.15)", border: "1px solid rgba(16,185,129,.35)",
+                              borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#6ee7b7" }}>
+                              ✓ Save Payslip
+                            </button>
+                            {actuals[cycle.key] && (
+                              <button className="btn" onClick={() => removeActual(cycle.key)} style={{
+                                background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)",
+                                borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#fca5a5" }}>
+                                Remove
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}
