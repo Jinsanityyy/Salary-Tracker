@@ -95,6 +95,7 @@ const BUDGET_DATA = {
       { label: "House (share)",      amount: 7500, type: "fixed" },
       { label: "Internet",           amount: 1500, type: "fixed" },
       { label: "Grocery",            amount: 3500, type: "variable" },
+      { label: "Taxi (grocery run)", amount: 150,  type: "variable" },
       { label: "Personal Allowance", amount: 1500, type: "flex" },
       { label: "Emergency Buffer",   amount: 1000, type: "flex" },
       { label: "Savings Transfer",   amount: 3500, type: "savings" },
@@ -558,35 +559,20 @@ export default function App() {
     return [...map.values()];
   })();
 
-  // Dynamic budget: find the next month where BOTH type A (C1, paid 5th)
-  // and type B (C2, paid 20th) are still upcoming — avoids mislabeling
-  // a straggler type-B as C1 when it chronologically lands before the next type-A.
-  const firstFullBudgetMonth = (() => {
-    const byMk = {};
-    ALL_CYCLES.forEach(c => {
-      if (c.paidDate < TODAY) return;
-      const mk = `${c.paidYear}-${c.paidMonth}`;
-      if (!byMk[mk]) byMk[mk] = {};
-      byMk[mk][c.type] = c;
-    });
-    const mk = Object.keys(byMk)
-      .sort((a, b) => {
-        const [ay, am] = a.split("-").map(Number);
-        const [by, bm] = b.split("-").map(Number);
-        return ay !== by ? ay - by : am - bm;
-      })
-      .find(k => byMk[k].A && byMk[k].B);
-    return mk ? byMk[mk] : null;
-  })();
-  const budgetC1Cycle    = firstFullBudgetMonth?.A || null;
-  const budgetC2Cycle    = firstFullBudgetMonth?.B || null;
-  const budgetC1Data     = budgetC1Cycle ? getCycleData(budgetC1Cycle) : null;
-  const budgetC2Data     = budgetC2Cycle ? getCycleData(budgetC2Cycle) : null;
-  const budgetC1         = Math.round(budgetC1Data?.php ?? BUDGET_DATA.income.c1);
-  const budgetC2         = Math.round(budgetC2Data?.php ?? BUDGET_DATA.income.c2);
-  const budgetMonthly    = budgetC1 + budgetC2;
-  const c1TotalSpend     = BUDGET_DATA.cutoff1.budget.reduce((a, b) => a + b.amount, 0);
-  const dynamicCarryOver = Math.max(0, budgetC1 - c1TotalSpend);
+  // Dynamic budget: take the next two upcoming payouts in chronological order,
+  // then assign C1 vs C2 expense items based on each cycle's type (A→C1, B→C2).
+  const budgetPair         = ALL_CYCLES.filter(c => c.paidDate >= TODAY).slice(0, 2);
+  const budgetFirst        = budgetPair[0] || null;
+  const budgetSecond       = budgetPair[1] || null;
+  const budgetFirstData    = budgetFirst  ? getCycleData(budgetFirst)  : null;
+  const budgetSecondData   = budgetSecond ? getCycleData(budgetSecond) : null;
+  const budgetFirstIncome  = Math.round(budgetFirstData?.php  ?? BUDGET_DATA.income.c1);
+  const budgetSecondIncome = Math.round(budgetSecondData?.php ?? BUDGET_DATA.income.c2);
+  const budgetMonthly      = budgetFirstIncome + budgetSecondIncome;
+  const firstItems         = budgetFirst?.type  === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
+  const secondItems        = budgetSecond?.type === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
+  const firstTotalSpend    = firstItems.reduce((a, b) => a + b.amount, 0);
+  const dynamicCarryOver   = Math.max(0, budgetFirstIncome - firstTotalSpend);
 
   const completedTasks = budgetTasks.filter(t => t.done).length;
   const weekTasks      = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
@@ -997,8 +983,8 @@ export default function App() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  { label: "C1", cycle: budgetC1Cycle, data: budgetC1Data, income: budgetC1 },
-                  { label: "C2", cycle: budgetC2Cycle, data: budgetC2Data, income: budgetC2 },
+                  { label: budgetFirst?.type  === "A" ? "C1" : "C2", cycle: budgetFirst,  data: budgetFirstData,  income: budgetFirstIncome  },
+                  { label: budgetSecond?.type === "A" ? "C1" : "C2", cycle: budgetSecond, data: budgetSecondData, income: budgetSecondIncome },
                 ].map(({ label, cycle, data, income }) => (
                   <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 12px" }}>
                     <div style={{ fontSize: 9, color: "#64748b", marginBottom: 4 }}>{label} · Paid {cycle?.paidLabel || "—"}</div>
@@ -1061,8 +1047,8 @@ export default function App() {
 
             {/* Cutoff cards */}
             <CutoffCard
-              title={`Cutoff 1 — Paid ${budgetC1Cycle?.paidLabel || "—"}${budgetC1Data?.isActual ? " ✓" : " ~"}`}
-              income={budgetC1} items={BUDGET_DATA.cutoff1.budget} carryOver={null}
+              title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
+              income={budgetFirstIncome} items={firstItems} carryOver={null}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
@@ -1070,8 +1056,8 @@ export default function App() {
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
             <CutoffCard
-              title={`Cutoff 2 — Paid ${budgetC2Cycle?.paidLabel || "—"}${budgetC2Data?.isActual ? " ✓" : " ~"}`}
-              income={budgetC2} items={BUDGET_DATA.cutoff2.budget} carryOver={dynamicCarryOver}
+              title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
+              income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
             />
 
             {/* CC Strategy */}
