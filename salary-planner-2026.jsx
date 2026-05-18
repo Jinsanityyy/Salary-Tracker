@@ -1874,23 +1874,44 @@ export default function App() {
               <div style={{ background: "var(--surface)", border: "1px solid rgba(56,189,248,0.1)", borderRadius: 16, padding: "16px 18px" }}>
                 <div style={{ fontSize: 10, color: "var(--fg3)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Milestones</div>
                 {MILESTONES.map((m, i) => {
-                  const reached  = totalSaved >= m.amount;
-                  const mPct     = Math.min((totalSaved / m.amount) * 100, 100);
+                  const reached    = totalSaved >= m.amount;
+                  const mPct       = Math.min((totalSaved / m.amount) * 100, 100);
+                  const mRemaining = Math.max(0, m.amount - totalSaved);
+                  const mMonths    = reached ? 0 : Math.ceil(mRemaining / monthlyRate);
+                  const eta        = new Date(TODAY);
+                  eta.setMonth(eta.getMonth() + mMonths);
+                  const etaStr     = eta.toLocaleDateString("en", { month: "short", year: "numeric" });
+                  const etaLabel   = mMonths >= 12
+                    ? `${Math.floor(mMonths / 12)}y${mMonths % 12 > 0 ? ` ${mMonths % 12}mo` : ""}`
+                    : `${mMonths}mo`;
+                  const isNext     = !reached && MILESTONES.slice(0, i).every(prev => totalSaved >= prev.amount);
                   return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 14,
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingBottom: 14,
                       marginBottom: i < MILESTONES.length - 1 ? 14 : 0,
                       borderBottom: i < MILESTONES.length - 1 ? "1px solid rgba(56,189,248,0.08)" : "none" }}>
-                      <div style={{ fontSize: 20, width: 28, textAlign: "center", opacity: reached ? 1 : 0.35 }}>{m.icon}</div>
+                      <div style={{ fontSize: 20, width: 28, textAlign: "center", flexShrink: 0,
+                        opacity: reached ? 1 : isNext ? 0.7 : 0.28, filter: isNext && !reached ? "drop-shadow(0 0 4px #3b82f6)" : "none" }}>{m.icon}</div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                          <span style={{ fontSize: 13, color: reached ? "var(--fg)" : "var(--fg3)", fontWeight: reached ? 600 : 400 }}>{m.label}</span>
-                          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, color: reached ? "var(--teal)" : "var(--fg4)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                          <span style={{ fontSize: 13, color: reached ? "var(--fg)" : isNext ? "var(--fg2)" : "var(--fg4)", fontWeight: reached || isNext ? 600 : 400 }}>{m.label}</span>
+                          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11,
+                            color: reached ? "#14b8a6" : isNext ? "#3b82f6" : "var(--fg4)" }}>
                             {reached ? "✓ Done" : `₱${m.amount.toLocaleString()}`}
                           </span>
                         </div>
-                        <div style={{ height: 3, background: "var(--bdr)", borderRadius: 99, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${mPct}%`, background: reached ? "#14b8a6" : "#3b82f6", borderRadius: 99 }} />
+                        <div style={{ height: 3, background: "var(--bdr)", borderRadius: 99, overflow: "hidden", marginBottom: 5 }}>
+                          <div style={{ height: "100%", width: `${mPct}%`,
+                            background: reached ? "#14b8a6" : isNext ? "#3b82f6" : "rgba(59,130,246,0.3)", borderRadius: 99,
+                            boxShadow: isNext && !reached ? "0 0 6px #3b82f680" : "none" }} />
                         </div>
+                        {reached ? (
+                          <div style={{ fontSize: 10, color: "var(--teal)" }}>Reached!</div>
+                        ) : (
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: isNext ? "var(--fg3)" : "var(--fg4)" }}>
+                            <span>₱{mRemaining.toLocaleString()} to go</span>
+                            <span style={{ color: isNext ? "#60a5fa" : "var(--fg4)" }}>~{etaLabel} · {etaStr}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
