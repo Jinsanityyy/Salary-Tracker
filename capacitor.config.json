@@ -1,0 +1,8 @@
+{
+  "appId": "com.finheal.app",
+  "appName": "FinHeal",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
