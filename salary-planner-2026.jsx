@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// ─── Salary Tracker Rates ─────────────────────────────────────────────────────
+// ─── Rates ────────────────────────────────────────────────────────────────────
 const CLIENT_RATE = 5.50;
 const MASTER_RATE = 3.75;
 const HOURS       = 8;
@@ -26,7 +26,7 @@ function workdaysBetween(start, end) {
   return n;
 }
 
-// ─── Build all pay cycles ─────────────────────────────────────────────────────
+// ─── Build pay cycles ─────────────────────────────────────────────────────────
 function buildCycles() {
   const cycles = [];
   const slots = [{ y: 2025, m: 11, type: "A" }, { y: 2025, m: 11, type: "B" }];
@@ -34,10 +34,8 @@ function buildCycles() {
     slots.push({ y: 2026, m, type: "A" });
     slots.push({ y: 2026, m, type: "B" });
   }
-
   for (const { y, m, type } of slots) {
     let cycleStart, cycleEnd, paidDate;
-
     if (type === "A") {
       cycleStart = new Date(y, m, 11);
       cycleEnd   = new Date(y, m, 25);
@@ -51,58 +49,42 @@ function buildCycles() {
       cycleEnd   = new Date(eY, eM, 10);
       paidDate   = new Date(eY, eM, 20);
     }
-
     if (paidDate > new Date(2026, 11, 31)) continue;
-
-    const days = workdaysBetween(cycleStart, cycleEnd);
-    const key  = `${y}-${m}-${type}`;
-
+    const days      = workdaysBetween(cycleStart, cycleEnd);
+    const key       = `${y}-${m}-${type}`;
     const startStr  = cycleStart.toLocaleDateString("en", { month: "short", day: "numeric" });
     const endStr    = cycleEnd.toLocaleDateString("en",   { month: "short", day: "numeric" });
     const paidLabel = paidDate.toLocaleDateString("en",   { month: "short", day: "numeric" });
-
     const isDec25A     = y === 2025 && m === 11;
     const isJan26      = y === 2026 && m === 0;
     const isFebApr     = y === 2026 && m >= 1 && m <= 3;
     const isMayA       = y === 2026 && m === 4 && type === "A";
     const isClientRest = (y === 2026 && m === 4 && type === "B") || (y === 2026 && m >= 5);
-
     let rateNote, baseUSD, isMixed = false, mixedBreakdown = null;
-
     if (isDec25A || isFebApr) {
-      rateNote = "Masterclass $3.75/hr";
-      baseUSD  = days * MASTER_RATE * HOURS;
+      rateNote = "Masterclass $3.75/hr"; baseUSD = days * MASTER_RATE * HOURS;
     } else if (isJan26 || isClientRest) {
-      rateNote = "Client $5.50/hr";
-      baseUSD  = days * CLIENT_RATE * HOURS;
+      rateNote = "Client $5.50/hr";     baseUSD = days * CLIENT_RATE * HOURS;
     } else if (isMayA) {
-      isMixed  = true;
-      rateNote = "Mixed (5d MC + 5d Client)";
+      isMixed = true; rateNote = "Mixed (5d MC + 5d Client)";
       const mUSD = 5 * MASTER_RATE * HOURS;
       const cUSD = 5 * CLIENT_RATE  * HOURS;
-      baseUSD  = mUSD + cUSD;
+      baseUSD = mUSD + cUSD;
       mixedBreakdown = { masterUSD: mUSD, clientUSD: cUSD };
     } else {
-      rateNote = "Client $5.50/hr";
-      baseUSD  = days * CLIENT_RATE * HOURS;
+      rateNote = "Client $5.50/hr";     baseUSD = days * CLIENT_RATE * HOURS;
     }
-
     cycles.push({
-      key, type, y, m,
-      cycleStart, cycleEnd, paidDate,
-      startStr, endStr, paidLabel,
-      days, baseUSD,
+      key, type, y, m, cycleStart, cycleEnd, paidDate,
+      startStr, endStr, paidLabel, days, baseUSD,
       rateNote, isMixed, mixedBreakdown,
-      paidMonth: paidDate.getMonth(),
-      paidYear:  paidDate.getFullYear(),
+      paidMonth: paidDate.getMonth(), paidYear: paidDate.getFullYear(),
     });
   }
   return cycles;
 }
 
-const ALL_CYCLES = buildCycles();
-
-// ─── Known locked payslips ────────────────────────────────────────────────────
+const ALL_CYCLES    = buildCycles();
 const LOCKED_PAYSLIPS = {};
 
 // ─── Financial Recovery Data ──────────────────────────────────────────────────
@@ -127,8 +109,8 @@ const BUDGET_DATA = {
       { label: "Savings Transfer",    amount: 3000, type: "savings" },
     ],
   },
-  savings:    { monthly: 6500, target: 19500, label: "1-Month Emergency Fund", months: 3 },
-  carryOver:  10000,
+  savings: { monthly: 6500, target: 19500, label: "1-Month Emergency Fund", months: 3 },
+  carryOver: 10000,
   foodLimits: [
     { label: "Cook at home",          daily: "₱150–200",   color: "#22c55e" },
     { label: "Tindahan / Carinderia", daily: "₱250–300",   color: "#84cc16" },
@@ -169,17 +151,78 @@ const php   = n => "₱" + Math.round(n).toLocaleString();
 const usd   = n => "$" + Number(n).toFixed(2);
 
 const RATE_COLORS = {
-  "Client $5.50/hr":           { t: "#6ee7b7", bg: "rgba(16,185,129,0.13)",  b: "rgba(16,185,129,0.3)" },
-  "Masterclass $3.75/hr":      { t: "#fcd34d", bg: "rgba(251,191,36,0.1)",   b: "rgba(251,191,36,0.3)" },
-  "Mixed (5d MC + 5d Client)": { t: "#c4b5fd", bg: "rgba(167,139,250,0.11)", b: "rgba(167,139,250,0.3)" },
+  "Client $5.50/hr":      { t: "#6ee7b7", bg: "rgba(16,185,129,0.13)",  b: "rgba(16,185,129,0.3)" },
+  "Masterclass $3.75/hr": { t: "#fcd34d", bg: "rgba(251,191,36,0.1)",   b: "rgba(251,191,36,0.3)" },
+  "Mixed":                { t: "#c4b5fd", bg: "rgba(167,139,250,0.11)", b: "rgba(167,139,250,0.3)" },
+};
+function getRateColor(label) {
+  if (RATE_COLORS[label]) return RATE_COLORS[label];
+  if (label && label.startsWith("Mixed")) return RATE_COLORS["Mixed"];
+  return { t: "#94a3b8", bg: "rgba(255,255,255,0.05)", b: "rgba(255,255,255,0.12)" };
+}
+
+// ─── Bottom Nav Config ────────────────────────────────────────────────────────
+const NAV_TABS = [
+  {
+    key: "timeline", label: "Timeline",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+        <line x1="8" y1="18" x2="21" y2="18"/>
+        <circle cx="3" cy="6" r="0.8" fill="currentColor"/><circle cx="3" cy="12" r="0.8" fill="currentColor"/>
+        <circle cx="3" cy="18" r="0.8" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    key: "monthly summary", label: "Monthly",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+      </svg>
+    ),
+  },
+  {
+    key: "budget", label: "Budget",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+      </svg>
+    ),
+  },
+  {
+    key: "food", label: "Food",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/>
+        <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+      </svg>
+    ),
+  },
+  {
+    key: "30-day plan", label: "Tasks",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    ),
+  },
+];
+
+// ─── Components ───────────────────────────────────────────────────────────────
+const BADGE_BASE = {
+  fontSize: 10, borderRadius: 99, padding: "3px 9px",
+  letterSpacing: 0.4, whiteSpace: "nowrap", fontWeight: 500,
 };
 
-// ─── Shared Components ────────────────────────────────────────────────────────
 function RateBadge({ label }) {
-  const c = RATE_COLORS[label] || { t: "#94a3b8", bg: "rgba(255,255,255,0.05)", b: "rgba(255,255,255,0.12)" };
+  const c = getRateColor(label);
   return (
-    <span style={{ fontSize: 9, color: c.t, background: c.bg, border: `1px solid ${c.b}`,
-      borderRadius: 99, padding: "2px 8px", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
+    <span style={{ ...BADGE_BASE, color: c.t, background: c.bg, border: `1px solid ${c.b}` }}>
       {label}
     </span>
   );
@@ -187,21 +230,18 @@ function RateBadge({ label }) {
 
 function StatusBadge({ isActual, isLocked }) {
   if (isLocked) return (
-    <span style={{ fontSize: 9, color: "#a5b4fc", background: "rgba(99,102,241,0.12)",
-      border: "1px solid rgba(99,102,241,0.35)", borderRadius: 99, padding: "2px 8px", letterSpacing: 0.5 }}>
+    <span style={{ ...BADGE_BASE, color: "#a5b4fc", background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.35)" }}>
       📌 PAYSLIP
     </span>
   );
   if (isActual) return (
-    <span style={{ fontSize: 9, color: "#6ee7b7", background: "rgba(16,185,129,0.12)",
-      border: "1px solid rgba(16,185,129,0.35)", borderRadius: 99, padding: "2px 8px", letterSpacing: 0.5 }}>
+    <span style={{ ...BADGE_BASE, color: "#6ee7b7", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)" }}>
       ✓ ACTUAL
     </span>
   );
   return (
-    <span style={{ fontSize: 9, color: "#64748b", background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "2px 8px", letterSpacing: 0.5 }}>
-      ~ EST
+    <span style={{ ...BADGE_BASE, color: "#64748b", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+      · EST
     </span>
   );
 }
@@ -231,21 +271,39 @@ function Bar({ pct, color = "#6366f1", h = 5 }) {
   useEffect(() => { const t = setTimeout(() => setW(Math.min(pct, 100)), 80); return () => clearTimeout(t); }, [pct]);
   return (
     <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: h, overflow: "hidden" }}>
-      <div style={{ height: "100%", width: `${w}%`, background: color, borderRadius: 99,
-        transition: "width 1s ease", boxShadow: `0 0 6px ${color}44` }} />
+      <div style={{ height: "100%", width: `${w}%`, background: color, borderRadius: 99, transition: "width 1s ease", boxShadow: `0 0 6px ${color}44` }} />
     </div>
   );
 }
 
-function PBar({ value, max, color = "#10b981", animate = true }) {
-  const pct = Math.min((value / max) * 100, 100);
+function PBar({ value, max, color = "#10b981", animate = true, showPct = false }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const [w, setW] = useState(0);
   useEffect(() => { const t = setTimeout(() => setW(pct), 100); return () => clearTimeout(t); }, [pct]);
   return (
-    <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 999, height: 6, overflow: "hidden" }}>
-      <div style={{ height: "100%", width: animate ? `${w}%` : `${pct}%`, background: color,
-        borderRadius: 999, transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)", boxShadow: `0 0 8px ${color}88` }} />
+    <div>
+      <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 999, height: 7, overflow: "hidden", position: "relative" }}>
+        <div style={{
+          height: "100%", width: animate ? `${w}%` : `${pct}%`, background: color,
+          borderRadius: 999, transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: `0 0 10px ${color}77`,
+        }} />
+      </div>
+      {showPct && (
+        <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 9, color, marginTop: 3, opacity: 0.75, fontFamily: "'DM Mono', monospace" }}>
+          {Math.round(pct)}%
+        </div>
+      )}
     </div>
+  );
+}
+
+function Chevron({ open }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round"
+      style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.25s ease", flexShrink: 0 }}>
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
   );
 }
 
@@ -253,60 +311,55 @@ function CutoffCard({ title, income, items, carryOver }) {
   const spent     = items.filter(i => i.type !== "savings").reduce((a, b) => a + b.amount, 0);
   const savings   = items.filter(i => i.type === "savings").reduce((a, b) => a + b.amount, 0);
   const remaining = income - spent - savings + (carryOver || 0);
+  const allocated = spent + savings;
+  const available = income + (carryOver || 0);
 
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 20, padding: "24px 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "22px 18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 10, letterSpacing: 2, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>{title}</div>
+          <div style={{ fontSize: 10, letterSpacing: 2, color: "#64748b", textTransform: "uppercase", marginBottom: 5 }}>{title}</div>
           <div style={{ fontSize: 24, fontFamily: "'DM Mono', monospace", color: "#f1f5f9", fontWeight: 600 }}>
             <AnimatedNumber value={income} />
           </div>
         </div>
-        <div style={{ background: remaining >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+        <div style={{
+          background: remaining >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
           border: `1px solid ${remaining >= 0 ? "#10b981" : "#ef4444"}`,
-          borderRadius: 10, padding: "6px 14px", fontSize: 12,
-          color: remaining >= 0 ? "#6ee7b7" : "#fca5a5", fontFamily: "'DM Mono', monospace" }}>
+          borderRadius: 10, padding: "6px 12px", fontSize: 12,
+          color: remaining >= 0 ? "#6ee7b7" : "#fca5a5", fontFamily: "'DM Mono', monospace",
+        }}>
           {remaining >= 0 ? "+" : ""}{remaining.toLocaleString()} left
         </div>
       </div>
 
-      {carryOver && (
-        <div style={{ background: "rgba(99,102,241,0.08)", border: "1px dashed rgba(99,102,241,0.4)",
-          borderRadius: 10, padding: "8px 14px", fontSize: 12, color: "#a5b4fc",
-          marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
+      {carryOver > 0 && (
+        <div style={{ background: "rgba(99,102,241,0.08)", border: "1px dashed rgba(99,102,241,0.35)", borderRadius: 10, padding: "8px 12px", fontSize: 12, color: "#a5b4fc", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
           <span>+ Carry-over from C1</span>
           <span style={{ fontFamily: "'DM Mono', monospace" }}>+₱{carryOver.toLocaleString()}</span>
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         {items.map((item, i) => {
           const tc = TYPE_COLORS[item.type];
           return (
-            <div key={i} style={{ background: tc.bg, border: `1px solid ${tc.border}33`,
-              borderLeft: `3px solid ${tc.border}`, borderRadius: 10, padding: "10px 14px",
-              display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div key={i} style={{ background: tc.bg, border: `1px solid ${tc.border}33`, borderLeft: `3px solid ${tc.border}`, borderRadius: 10, padding: "9px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 13, color: "#e2e8f0", marginBottom: 2 }}>{item.label}</div>
-                <div style={{ fontSize: 9, color: tc.text, textTransform: "uppercase", letterSpacing: 1 }}>
-                  {TYPE_LABELS[item.type]}
-                </div>
+                <div style={{ fontSize: 9, color: tc.text, textTransform: "uppercase", letterSpacing: 1 }}>{TYPE_LABELS[item.type]}</div>
               </div>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: tc.text, fontWeight: 600 }}>
-                ₱{item.amount.toLocaleString()}
-              </div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: tc.text, fontWeight: 600 }}>₱{item.amount.toLocaleString()}</div>
             </div>
           );
         })}
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <PBar value={spent + savings} max={income + (carryOver || 0)} color="#6366f1" />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#475569" }}>
-          <span>₱{(spent + savings).toLocaleString()} allocated</span>
-          <span>₱{(income + (carryOver || 0)).toLocaleString()} available</span>
+        <PBar value={allocated} max={available} color="#6366f1" showPct />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, color: "#64748b" }}>
+          <span>₱{allocated.toLocaleString()} allocated</span>
+          <span>₱{available.toLocaleString()} available</span>
         </div>
       </div>
     </div>
@@ -319,9 +372,7 @@ export default function App() {
     try {
       const stored = JSON.parse(localStorage.getItem("salary_planner_actuals_v2") || "{}");
       return { ...LOCKED_PAYSLIPS, ...stored };
-    } catch {
-      return { ...LOCKED_PAYSLIPS };
-    }
+    } catch { return { ...LOCKED_PAYSLIPS }; }
   });
 
   const [editing, setEditing]         = useState(null);
@@ -331,7 +382,6 @@ export default function App() {
   const [customFx, setCustomFx]       = useState("");
   const [toast, setToast]             = useState(null);
 
-  // Financial recovery state — persisted in localStorage
   const [budgetTasks, setBudgetTasks] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("budget_tasks_v1") || "null");
@@ -340,17 +390,24 @@ export default function App() {
   });
   const [activeWeek, setActiveWeek] = useState(1);
 
-  // Auto-save actuals
+  // Accordion: collapse all fully-past months, expand months with upcoming cycles
+  const [collapsedMonths, setCollapsedMonths] = useState(() => {
+    const state = {};
+    ALL_CYCLES.forEach(c => {
+      const mk = `${c.paidYear}-${c.paidMonth}`;
+      if (!(mk in state)) state[mk] = true;
+      if (c.paidDate >= TODAY) state[mk] = false;
+    });
+    return state;
+  });
+
   useEffect(() => {
     try {
-      const toStore = Object.fromEntries(
-        Object.entries(actuals).filter(([, v]) => !v.locked)
-      );
+      const toStore = Object.fromEntries(Object.entries(actuals).filter(([, v]) => !v.locked));
       localStorage.setItem("salary_planner_actuals_v2", JSON.stringify(toStore));
     } catch {}
   }, [actuals]);
 
-  // Auto-save budget tasks
   useEffect(() => {
     try { localStorage.setItem("budget_tasks_v1", JSON.stringify(budgetTasks)); } catch {}
   }, [budgetTasks]);
@@ -360,7 +417,7 @@ export default function App() {
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 2000);
+    setTimeout(() => setToast(null), 2200);
   }
 
   function rateNoteFromType(rateType, mcHours, clientHours) {
@@ -374,35 +431,25 @@ export default function App() {
   function computeUSD(rateType, hours, mcHours, clientHours) {
     if (rateType === "mc")     return (parseFloat(hours) || 0) * MASTER_RATE;
     if (rateType === "client") return (parseFloat(hours) || 0) * CLIENT_RATE;
-    return (parseFloat(mcHours) || 0) * MASTER_RATE
-         + (parseFloat(clientHours) || 0) * CLIENT_RATE;
+    return (parseFloat(mcHours) || 0) * MASTER_RATE + (parseFloat(clientHours) || 0) * CLIENT_RATE;
   }
 
   function getCycleData(cycle) {
     const actual = actuals[cycle.key];
     if (actual) return {
-      php:      actual.php,
-      usd:      actual.usd,
-      fxUsed:   actual.fxRate,
-      hours:    actual.hours,
-      rateNote: actual.rateType
-        ? rateNoteFromType(actual.rateType, actual.mcHours, actual.clientHours)
-        : cycle.rateNote,
-      isActual: true,
-      isLocked: !!actual.locked,
+      php:      actual.php, usd: actual.usd, fxUsed: actual.fxRate, hours: actual.hours,
+      rateNote: actual.rateType ? rateNoteFromType(actual.rateType, actual.mcHours, actual.clientHours) : cycle.rateNote,
+      isActual: true, isLocked: !!actual.locked,
     };
     return {
-      php: cycle.baseUSD * effectiveFx, usd: cycle.baseUSD,
-      fxUsed: effectiveFx, hours: cycle.days * HOURS,
-      rateNote: cycle.rateNote,
-      isActual: false, isLocked: false,
+      php: cycle.baseUSD * effectiveFx, usd: cycle.baseUSD, fxUsed: effectiveFx,
+      hours: cycle.days * HOURS, rateNote: cycle.rateNote, isActual: false, isLocked: false,
     };
   }
 
   function handleEditChange(field, value) {
     setEditVal(prev => {
       const next = { ...prev, [field]: value };
-
       if (["rateType", "hours", "mcHours", "clientHours"].includes(field)) {
         if (next.rateType === "mc") {
           const u = (parseFloat(next.hours) || 0) * MASTER_RATE;
@@ -411,44 +458,53 @@ export default function App() {
           const u = (parseFloat(next.hours) || 0) * CLIENT_RATE;
           next.usd = u > 0 ? u.toFixed(2) : "";
         } else if (next.rateType === "mixed") {
-          const mc = parseFloat(next.mcHours)     || 0;
+          const mc = parseFloat(next.mcHours) || 0;
           const cl = parseFloat(next.clientHours) || 0;
           const u  = mc * MASTER_RATE + cl * CLIENT_RATE;
-          next.usd   = u > 0 ? u.toFixed(2) : "";
+          next.usd = u > 0 ? u.toFixed(2) : "";
           next.hours = mc + cl > 0 ? String(mc + cl) : "";
         }
       }
-
       if (["rateType", "hours", "mcHours", "clientHours", "fxRate", "usd"].includes(field)) {
-        const u  = parseFloat(next.usd)    || 0;
+        const u  = parseFloat(next.usd) || 0;
         const fx = parseFloat(next.fxRate) || 0;
         if (u > 0 && fx > 0) next.php = Math.round(u * fx).toString();
       }
-
       return next;
+    });
+  }
+
+  function openEdit(cycle) {
+    setEditing(cycle.key);
+    const ex = actuals[cycle.key];
+    setEditVal({
+      php:         ex?.php         || "",
+      usd:         ex?.usd         || "",
+      fxRate:      ex?.fxRate      || "",
+      hours:       ex?.hours       || "",
+      rateType:    ex?.rateType    || "client",
+      mcHours:     ex?.mcHours     || "",
+      clientHours: ex?.clientHours || "",
     });
   }
 
   function saveActual(key, phpOverride) {
     const p = parseFloat(phpOverride || editVal.php);
     if (!p || p <= 0) return;
-    const isMixed   = editVal.rateType === "mixed";
-    const mcHours   = parseFloat(editVal.mcHours)     || 0;
-    const clHours   = parseFloat(editVal.clientHours) || 0;
-    const hours     = isMixed ? mcHours + clHours : (parseFloat(editVal.hours) || 0);
-    const autoUSD   = computeUSD(editVal.rateType, hours, mcHours, clHours);
-
+    const isMixed  = editVal.rateType === "mixed";
+    const mcHours  = parseFloat(editVal.mcHours) || 0;
+    const clHours  = parseFloat(editVal.clientHours) || 0;
+    const hours    = isMixed ? mcHours + clHours : (parseFloat(editVal.hours) || 0);
+    const autoUSD  = computeUSD(editVal.rateType, hours, mcHours, clHours);
     setActuals(prev => ({
       ...prev,
       [key]: {
-        php:         p,
-        usd:         parseFloat(editVal.usd) || autoUSD,
-        fxRate:      parseFloat(editVal.fxRate) || effectiveFx,
-        hours,
-        rateType:    editVal.rateType,
-        mcHours:     isMixed ? mcHours : null,
+        php: p, usd: parseFloat(editVal.usd) || autoUSD,
+        fxRate: parseFloat(editVal.fxRate) || effectiveFx,
+        hours, rateType: editVal.rateType,
+        mcHours: isMixed ? mcHours : null,
         clientHours: isMixed ? clHours : null,
-        locked:      false,
+        locked: false,
       },
     }));
     setEditing(null);
@@ -467,21 +523,21 @@ export default function App() {
     setBudgetTasks(prev => prev.map((t, idx) => idx === i ? { ...t, done: !t.done } : t));
   }
 
-  // Totals
+  function toggleMonth(mk) {
+    setCollapsedMonths(prev => ({ ...prev, [mk]: !prev[mk] }));
+  }
+
+  // ── Derived values ────────────────────────────────────────────────────────
   const confirmedCount = Object.keys(actuals).length;
   const totalCycles    = ALL_CYCLES.length;
   const totalPhp       = ALL_CYCLES.reduce((a, c) => a + getCycleData(c).php, 0);
   const confirmedPhp   = ALL_CYCLES.filter(c => actuals[c.key]).reduce((a, c) => a + actuals[c.key].php, 0);
   const estimatedPhp   = totalPhp - confirmedPhp;
 
-  // Group by paid month for summary tab
   const byMonth = {};
   ALL_CYCLES.forEach(c => {
     const mk = `${c.paidYear}-${c.paidMonth}`;
-    if (!byMonth[mk]) byMonth[mk] = {
-      label: c.paidDate.toLocaleString("en", { month: "long", year: "numeric" }),
-      cycles: [], totalPhp: 0, totalUsd: 0,
-    };
+    if (!byMonth[mk]) byMonth[mk] = { label: c.paidDate.toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], totalPhp: 0, totalUsd: 0 };
     const d = getCycleData(c);
     byMonth[mk].cycles.push({ ...c, ...d });
     byMonth[mk].totalPhp += d.php;
@@ -489,119 +545,123 @@ export default function App() {
   });
   const maxMonthPhp = Math.max(...Object.values(byMonth).map(m => m.totalPhp));
 
-  // Dynamic budget: pull income from next two upcoming pay cycles
-  const upcomingCycles  = ALL_CYCLES.filter(c => c.paidDate >= TODAY);
-  const budgetC1Cycle   = upcomingCycles[0] || null;
-  const budgetC2Cycle   = upcomingCycles[1] || null;
-  const budgetC1Data    = budgetC1Cycle ? getCycleData(budgetC1Cycle) : null;
-  const budgetC2Data    = budgetC2Cycle ? getCycleData(budgetC2Cycle) : null;
-  const budgetC1        = Math.round(budgetC1Data?.php ?? BUDGET_DATA.income.c1);
-  const budgetC2        = Math.round(budgetC2Data?.php ?? BUDGET_DATA.income.c2);
-  const budgetMonthly   = budgetC1 + budgetC2;
-  const c1TotalSpend    = BUDGET_DATA.cutoff1.budget.reduce((a, b) => a + b.amount, 0);
+  // Timeline accordion groups
+  const timelineGroups = (() => {
+    const map = new Map();
+    ALL_CYCLES.forEach(cycle => {
+      const mk = `${cycle.paidYear}-${cycle.paidMonth}`;
+      if (!map.has(mk)) map.set(mk, { mk, label: cycle.paidDate.toLocaleDateString("en", { month: "long", year: "numeric" }), entries: [] });
+      const d      = getCycleData(cycle);
+      const isNext = cycle.key === nextPayKey;
+      map.get(mk).entries.push({ cycle, d, isNext });
+    });
+    return [...map.values()];
+  })();
+
+  // Dynamic budget from payslip tracker
+  const upcomingCycles   = ALL_CYCLES.filter(c => c.paidDate >= TODAY);
+  const budgetC1Cycle    = upcomingCycles[0] || null;
+  const budgetC2Cycle    = upcomingCycles[1] || null;
+  const budgetC1Data     = budgetC1Cycle ? getCycleData(budgetC1Cycle) : null;
+  const budgetC2Data     = budgetC2Cycle ? getCycleData(budgetC2Cycle) : null;
+  const budgetC1         = Math.round(budgetC1Data?.php ?? BUDGET_DATA.income.c1);
+  const budgetC2         = Math.round(budgetC2Data?.php ?? BUDGET_DATA.income.c2);
+  const budgetMonthly    = budgetC1 + budgetC2;
+  const c1TotalSpend     = BUDGET_DATA.cutoff1.budget.reduce((a, b) => a + b.amount, 0);
   const dynamicCarryOver = Math.max(0, budgetC1 - c1TotalSpend);
 
-  // Budget task counts
   const completedTasks = budgetTasks.filter(t => t.done).length;
-  const weekTasks = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
+  const weekTasks      = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
 
-  const TABS = ["timeline", "monthly summary", "budget", "food", "30-day plan"];
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "#070a10", color: "#e2e8f0",
-      fontFamily: "'DM Sans', sans-serif", paddingBottom: 72 }}>
+    <div style={{ minHeight: "100vh", background: "#070a10", color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 99px; }
         input, button { font-family: 'DM Sans', sans-serif; }
-        .btn { cursor: pointer; transition: all .18s; }
-        @keyframes fu { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .fu { animation: fu .3s ease forwards; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
-        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-        .task-row { cursor: pointer; transition: all 0.2s; }
-        .task-row:hover { background: rgba(255,255,255,0.05) !important; }
+        .btn { cursor: pointer; transition: all .15s; }
+        .card-tap { cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+        .card-tap:active { background: rgba(255,255,255,0.05) !important; }
+        .task-row { cursor: pointer; transition: all 0.15s; }
+        .task-row:active { opacity: 0.8; }
+        .nav-btn { cursor: pointer; transition: color 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
+        .nav-btn:active { opacity: 0.6; }
+        @keyframes fu { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .fu { animation: fu .25s ease forwards; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        @keyframes toastIn { from{opacity:0;transform:translate(-50%,8px)} to{opacity:1;transform:translate(-50%,0)} }
       `}</style>
 
       {/* ── TOAST ── */}
       {toast && (
         <div style={{
-          position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
+          position: "fixed", bottom: "calc(80px + env(safe-area-inset-bottom,0px))", left: "50%", transform: "translateX(-50%)",
           background: toast.type === "error" ? "rgba(239,68,68,.18)" : "rgba(16,185,129,.18)",
           border: `1px solid ${toast.type === "error" ? "rgba(239,68,68,.45)" : "rgba(16,185,129,.45)"}`,
-          borderRadius: 10, padding: "9px 22px", fontSize: 12,
+          borderRadius: 10, padding: "9px 20px", fontSize: 12,
           color: toast.type === "error" ? "#fca5a5" : "#6ee7b7",
           fontFamily: "'DM Mono', monospace", zIndex: 9999,
-          animation: "toastIn .22s ease forwards",
-          boxShadow: "0 4px 24px rgba(0,0,0,.5)", whiteSpace: "nowrap",
+          animation: "toastIn .2s ease forwards", boxShadow: "0 4px 24px rgba(0,0,0,.6)", whiteSpace: "nowrap",
         }}>
           {toast.msg}
         </div>
       )}
 
       {/* ── HEADER ── */}
-      <div style={{ background: "linear-gradient(145deg, rgba(99,102,241,.14) 0%, rgba(16,185,129,.04) 100%)",
-        borderBottom: "1px solid rgba(255,255,255,.06)", padding: "26px 18px 20px" }}>
+      <div style={{ background: "linear-gradient(145deg, rgba(99,102,241,.12) 0%, rgba(16,185,129,.03) 100%)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "22px 18px 18px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div style={{ fontSize: 9, letterSpacing: 3, color: "#475569", textTransform: "uppercase", marginBottom: 4 }}>
             Global Medical Staffing · 2026
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: "#f1f5f9", marginBottom: 2 }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#f1f5f9", marginBottom: 2 }}>
             Payslip <span style={{ color: "#6366f1" }}>Tracker</span>
-            <span style={{ fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#475569", fontWeight: 400, marginLeft: 10 }}>
-              + Budget Control
-            </span>
+            <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#475569", fontWeight: 400, marginLeft: 10 }}>+ Budget</span>
           </div>
-          <div style={{ fontSize: 11, color: "#475569", marginBottom: 14 }}>
-            Cycle: 11–25 → paid 5th · 26–10 → paid 20th · US holidays excluded · 8h/day
+          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 14 }}>
+            11–25 → paid 5th · 26–10 → paid 20th · US holidays · 8h/day
           </div>
 
-          {/* FX controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            <div style={{ background: "rgba(16,185,129,.1)", border: "1px solid rgba(16,185,129,.25)",
-              borderRadius: 9, padding: "6px 12px", fontSize: 11 }}>
-              <span style={{ color: "#475569" }}>Live FX: </span>
-              <span style={{ fontFamily: "'DM Mono', monospace", color: "#6ee7b7", fontWeight: 600 }}>₱{LIVE_FX}/USD</span>
-              <span style={{ color: "#334155", fontSize: 9, marginLeft: 4 }}>May 18, 2026</span>
+          {/* FX row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            <div style={{ background: "rgba(16,185,129,.09)", border: "1px solid rgba(16,185,129,.22)", borderRadius: 8, padding: "5px 11px", fontSize: 11 }}>
+              <span style={{ color: "#64748b" }}>FX </span>
+              <span style={{ fontFamily: "'DM Mono', monospace", color: "#6ee7b7", fontWeight: 600 }}>₱{LIVE_FX}</span>
+              <span style={{ color: "#334155", fontSize: 9, marginLeft: 4 }}>May 18</span>
             </div>
             <button className="btn" onClick={() => setUseCustomFx(p => !p)} style={{
-              background: useCustomFx ? "rgba(251,191,36,.12)" : "rgba(255,255,255,.04)",
+              background: useCustomFx ? "rgba(251,191,36,.1)" : "rgba(255,255,255,.04)",
               border: `1px solid ${useCustomFx ? "#f59e0b" : "rgba(255,255,255,.08)"}`,
-              borderRadius: 8, padding: "5px 11px", fontSize: 11,
-              color: useCustomFx ? "#fcd34d" : "#475569" }}>
+              borderRadius: 8, padding: "5px 10px", fontSize: 11,
+              color: useCustomFx ? "#fcd34d" : "#64748b" }}>
               {useCustomFx ? "✓ Custom FX" : "Custom FX"}
             </button>
             {useCustomFx && (
-              <input type="number" placeholder="e.g. 62.00" value={customFx}
-                onChange={e => setCustomFx(e.target.value)}
-                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(251,191,36,.3)",
-                  borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#fcd34d",
-                  width: 100, fontFamily: "'DM Mono', monospace" }} />
+              <input type="number" placeholder="e.g. 62.00" value={customFx} onChange={e => setCustomFx(e.target.value)}
+                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 8, padding: "5px 9px", fontSize: 12, color: "#fcd34d", width: 100, fontFamily: "'DM Mono', monospace" }} />
             )}
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 9 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
             {[
-              { label: "Year Gross",     val: php(totalPhp),      sub: `${totalCycles} payslips`,                   color: "#a5b4fc" },
-              { label: "Confirmed",      val: php(confirmedPhp),  sub: `${confirmedCount} payslips in`,             color: "#6ee7b7" },
-              { label: "Estimated",      val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} remaining`, color: "#fcd34d" },
-              { label: "Per day client", val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#10b981" },
+              { label: "Year Gross",   val: php(totalPhp),      sub: `${totalCycles} cycles`,       color: "#a5b4fc" },
+              { label: "Confirmed",    val: php(confirmedPhp),  sub: `${confirmedCount} in`,        color: "#6ee7b7" },
+              { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} left`, color: "#fcd34d" },
+              { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#10b981" },
             ].map((s, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)",
-                borderRadius: 11, padding: "10px 12px" }}>
-                <div style={{ fontSize: 9, color: "#475569", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: s.color, fontWeight: 600 }}>{s.val}</div>
-                <div style={{ fontSize: 9, color: "#334155", marginTop: 1 }}>{s.sub}</div>
+              <div key={i} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 10, padding: "9px 10px" }}>
+                <div style={{ fontSize: 8, color: "#64748b", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: s.color, fontWeight: 600 }}>{s.val}</div>
+                <div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
-          {/* Progress bar */}
           <div style={{ marginTop: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#334155", marginBottom: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#475569", marginBottom: 5 }}>
               <span>Payslips confirmed</span>
               <span style={{ fontFamily: "'DM Mono', monospace", color: "#6366f1" }}>{confirmedCount}/{totalCycles}</span>
             </div>
@@ -610,245 +670,248 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── TABS ── */}
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 18px" }}>
-        <div style={{ display: "flex", gap: 4, marginTop: 16, marginBottom: 18, overflowX: "auto", paddingBottom: 4 }}>
-          {TABS.map(t => (
-            <button key={t} className="btn" onClick={() => setTab(t)} style={{
-              background: tab === t ? "rgba(99,102,241,.18)" : "transparent",
-              border: `1px solid ${tab === t ? "#6366f1" : "rgba(255,255,255,.07)"}`,
-              borderRadius: 99, padding: "6px 15px", fontSize: 11,
-              color: tab === t ? "#a5b4fc" : "#475569", textTransform: "capitalize",
-              letterSpacing: .5, whiteSpace: "nowrap" }}>
-              {t}
-              {t === "30-day plan" && completedTasks > 0 && (
-                <span style={{ marginLeft: 5, fontSize: 9, color: "#6ee7b7", fontFamily: "'DM Mono', monospace" }}>
-                  {completedTasks}/{budgetTasks.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* ── CONTENT ── */}
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "18px 18px 0" }}>
 
         {/* ════ TIMELINE ════ */}
         {tab === "timeline" && (
           <div className="fu">
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
               {Object.entries(RATE_COLORS).map(([label, c]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: c.t }}>
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 9, color: c.t }}>
                   <div style={{ width: 5, height: 5, borderRadius: "50%", background: c.t }} />{label}
                 </div>
               ))}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {ALL_CYCLES.map(cycle => {
-                const d         = getCycleData(cycle);
-                const isEditing = editing === cycle.key;
-                const isPast    = cycle.paidDate < TODAY;
-                const isNext    = cycle.key === nextPayKey;
+            {/* Accordion month groups */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {timelineGroups.map(group => {
+                const isCollapsed = !!collapsedMonths[group.mk];
+                const hasActual   = group.entries.some(e => e.d.isActual || e.d.isLocked);
+                const hasCurrent  = group.entries.some(e => e.isNext);
+                const totalGrpPhp = group.entries.reduce((s, e) => s + e.d.php, 0);
+                const actualCount = group.entries.filter(e => e.d.isActual || e.d.isLocked).length;
 
                 return (
-                  <div key={cycle.key} style={{
-                    background: isNext ? "rgba(99,102,241,.09)" : "rgba(255,255,255,.02)",
-                    border: `1px solid ${isNext ? "rgba(99,102,241,.4)" : d.isLocked ? "rgba(99,102,241,.25)" : d.isActual ? "rgba(16,185,129,.2)" : "rgba(255,255,255,.06)"}`,
-                    borderRadius: 14, overflow: "hidden",
-                    opacity: isPast && !d.isActual ? 0.7 : 1,
-                  }}>
-                    <div style={{ padding: "12px 14px", display: "grid",
-                      gridTemplateColumns: "1fr auto auto", gap: 10, alignItems: "center" }}>
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
-                          <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600 }}>
-                            {cycle.startStr} – {cycle.endStr}
+                  <div key={group.mk}>
+                    {/* Month group header */}
+                    <div onClick={() => toggleMonth(group.mk)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 6px 8px", cursor: "pointer", userSelect: "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: hasCurrent ? "#a5b4fc" : hasActual ? "#6ee7b7" : "#1e293b", border: hasCurrent || hasActual ? "none" : "1px solid #334155" }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: hasCurrent ? "#e2e8f0" : hasActual ? "#94a3b8" : "#64748b" }}>
+                          {group.label}
+                        </span>
+                        {hasCurrent && (
+                          <span style={{ fontSize: 8, color: "#a5b4fc", background: "rgba(99,102,241,.18)", border: "1px solid rgba(99,102,241,.35)", borderRadius: 99, padding: "1px 7px", animation: "pulse 2s infinite" }}>
+                            CURRENT
                           </span>
-                          {isNext && (
-                            <span style={{ fontSize: 8, color: "#a5b4fc", background: "rgba(99,102,241,.2)",
-                              border: "1px solid rgba(99,102,241,.4)", borderRadius: 99, padding: "1px 6px",
-                              animation: "pulse 2s infinite" }}>NEXT PAYOUT</span>
-                          )}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 10, color: "#475569" }}>
-                            Paid: <span style={{ color: "#94a3b8" }}>{cycle.paidLabel}</span>
+                        )}
+                        {actualCount > 0 && !hasCurrent && (
+                          <span style={{ fontSize: 9, color: "#6ee7b7", opacity: 0.7 }}>{actualCount}/{group.entries.length} actual</span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {isCollapsed && (
+                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: hasActual ? "#6ee7b7" : "#475569" }}>
+                            {php(totalGrpPhp)}
                           </span>
-                          <span style={{ color: "#334155" }}>·</span>
-                          <span style={{ fontSize: 10, color: "#475569" }}>{d.hours}h ({cycle.days}d)</span>
-                          <span style={{ color: "#334155" }}>·</span>
-                          <RateBadge label={d.rateNote} />
-                          <StatusBadge isActual={d.isActual} isLocked={d.isLocked} />
-                        </div>
+                        )}
+                        <Chevron open={!isCollapsed} />
                       </div>
-
-                      <div style={{ textAlign: "right", minWidth: 90 }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 600,
-                          color: d.isLocked ? "#a5b4fc" : d.isActual ? "#6ee7b7" : isNext ? "#a5b4fc" : "#64748b" }}>
-                          {php(d.php)}
-                        </div>
-                        <div style={{ fontSize: 9, color: "#334155" }}>
-                          {usd(d.usd)} · @₱{d.fxUsed.toFixed(2)}
-                        </div>
-                      </div>
-
-                      {!d.isLocked ? (
-                        <button className="btn" onClick={() => {
-                          if (isEditing) { setEditing(null); return; }
-                          setEditing(cycle.key);
-                          const ex = actuals[cycle.key];
-                          setEditVal({
-                            php:         ex?.php         || "",
-                            usd:         ex?.usd         || "",
-                            fxRate:      ex?.fxRate      || "",
-                            hours:       ex?.hours       || "",
-                            rateType:    ex?.rateType    || "client",
-                            mcHours:     ex?.mcHours     || "",
-                            clientHours: ex?.clientHours || "",
-                          });
-                        }} style={{
-                          background: isEditing ? "rgba(239,68,68,.12)" : "rgba(99,102,241,.12)",
-                          border: `1px solid ${isEditing ? "rgba(239,68,68,.3)" : "rgba(99,102,241,.3)"}`,
-                          borderRadius: 8, padding: "5px 10px", fontSize: 10,
-                          color: isEditing ? "#fca5a5" : "#a5b4fc" }}>
-                          {isEditing ? "✕" : d.isActual ? "✎" : "+"}
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: 10, color: "#475569", padding: "5px 6px" }}>🔒</span>
-                      )}
                     </div>
 
-                    {/* Mixed breakdown */}
-                    {cycle.isMixed && d.isLocked && cycle.mixedBreakdown && (
-                      <div style={{ marginInline: 14, marginBottom: 12,
-                        background: "rgba(167,139,250,.07)", border: "1px solid rgba(167,139,250,.18)",
-                        borderRadius: 9, padding: "9px 12px" }}>
-                        <div style={{ fontSize: 9, color: "#c4b5fd", letterSpacing: 1, marginBottom: 7 }}>MIXED BREAKDOWN</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
-                          <span style={{ color: "#fcd34d" }}>5d Masterclass @ $3.75 × 40h</span>
-                          <span style={{ fontFamily: "'DM Mono', monospace", color: "#fcd34d" }}>
-                            {php(cycle.mixedBreakdown.masterUSD * d.fxUsed)}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-                          <span style={{ color: "#6ee7b7" }}>5d Client @ $5.50 × 40h</span>
-                          <span style={{ fontFamily: "'DM Mono', monospace", color: "#6ee7b7" }}>
-                            {php(cycle.mixedBreakdown.clientUSD * d.fxUsed)}
-                          </span>
-                        </div>
+                    {/* Collapsible cycle cards */}
+                    <div style={{ maxHeight: isCollapsed ? 0 : "9999px", overflow: "hidden", transition: "max-height 0.38s ease" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 7, paddingBottom: 10 }}>
+                        {group.entries.map(({ cycle, d, isNext }) => {
+                          const isEditing = editing === cycle.key;
+                          const isPast    = cycle.paidDate < TODAY;
+
+                          return (
+                            <div key={cycle.key}
+                              className={d.isLocked ? "" : "card-tap"}
+                              onClick={() => {
+                                if (d.isLocked) return;
+                                if (isEditing) { setEditing(null); return; }
+                                openEdit(cycle);
+                              }}
+                              style={{
+                                background: isNext ? "rgba(99,102,241,.08)" : "rgba(255,255,255,.02)",
+                                border: `1px solid ${isNext ? "rgba(99,102,241,.38)" : d.isLocked ? "rgba(99,102,241,.2)" : d.isActual ? "rgba(16,185,129,.18)" : "rgba(255,255,255,.06)"}`,
+                                borderRadius: 14, overflow: "hidden",
+                                opacity: isPast && !d.isActual ? 0.75 : 1,
+                                position: "relative",
+                              }}>
+
+                              {/* Edit affordance indicator */}
+                              {!d.isLocked && (
+                                <div style={{
+                                  position: "absolute", top: 10, right: 10,
+                                  width: 22, height: 22, borderRadius: 6,
+                                  background: isEditing ? "rgba(239,68,68,.12)" : "rgba(99,102,241,.1)",
+                                  border: `1px solid ${isEditing ? "rgba(239,68,68,.28)" : "rgba(99,102,241,.22)"}`,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: 10, color: isEditing ? "#fca5a5" : "#6366f1",
+                                  pointerEvents: "none",
+                                }}>
+                                  {isEditing ? "✕" : d.isActual ? "✎" : "+"}
+                                </div>
+                              )}
+
+                              {/* Card content */}
+                              <div style={{ padding: "12px 42px 12px 14px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                                  <span style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>
+                                    {cycle.startStr} – {cycle.endStr}
+                                  </span>
+                                  {isNext && (
+                                    <span style={{ fontSize: 8, color: "#a5b4fc", background: "rgba(99,102,241,.18)", border: "1px solid rgba(99,102,241,.38)", borderRadius: 99, padding: "1px 6px", animation: "pulse 2s infinite" }}>
+                                      NEXT PAYOUT
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Meta row — high-contrast secondary text */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                                    Paid <span style={{ color: "#cbd5e1" }}>{cycle.paidLabel}</span>
+                                  </span>
+                                  <span style={{ color: "#475569", fontSize: 10 }}>·</span>
+                                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{d.hours}h ({cycle.days}d)</span>
+                                  <span style={{ color: "#475569", fontSize: 10 }}>·</span>
+                                  <RateBadge label={d.rateNote} />
+                                  <StatusBadge isActual={d.isActual} isLocked={d.isLocked} />
+                                </div>
+
+                                {/* Amount row */}
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 600, color: d.isLocked ? "#a5b4fc" : d.isActual ? "#6ee7b7" : isNext ? "#a5b4fc" : "#64748b" }}>
+                                    {php(d.php)}
+                                  </div>
+                                  <div style={{ fontSize: 10, color: "#64748b" }}>
+                                    {usd(d.usd)} · @₱{d.fxUsed.toFixed(2)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Mixed breakdown (locked only) */}
+                              {cycle.isMixed && d.isLocked && cycle.mixedBreakdown && (
+                                <div style={{ marginInline: 14, marginBottom: 12, background: "rgba(167,139,250,.07)", border: "1px solid rgba(167,139,250,.18)", borderRadius: 9, padding: "9px 12px" }}>
+                                  <div style={{ fontSize: 9, color: "#c4b5fd", letterSpacing: 1, marginBottom: 6 }}>MIXED BREAKDOWN</div>
+                                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
+                                    <span style={{ color: "#fcd34d" }}>5d MC @ $3.75 × 40h</span>
+                                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#fcd34d" }}>{php(cycle.mixedBreakdown.masterUSD * d.fxUsed)}</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+                                    <span style={{ color: "#6ee7b7" }}>5d Client @ $5.50 × 40h</span>
+                                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#6ee7b7" }}>{php(cycle.mixedBreakdown.clientUSD * d.fxUsed)}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Edit panel */}
+                              {isEditing && (() => {
+                                const isMixed    = editVal.rateType === "mixed";
+                                const mcH        = parseFloat(editVal.mcHours) || 0;
+                                const clH        = parseFloat(editVal.clientHours) || 0;
+                                const autoUSD    = isMixed
+                                  ? (mcH * MASTER_RATE + clH * CLIENT_RATE).toFixed(2)
+                                  : editVal.rateType === "mc"
+                                    ? ((parseFloat(editVal.hours) || 0) * MASTER_RATE).toFixed(2)
+                                    : ((parseFloat(editVal.hours) || 0) * CLIENT_RATE).toFixed(2);
+                                const displayUSD = editVal.usd || autoUSD;
+                                const autoPhp    = displayUSD && editVal.fxRate ? Math.round(parseFloat(displayUSD) * parseFloat(editVal.fxRate)) : "";
+                                const displayPhp = editVal.php || (autoPhp > 0 ? String(autoPhp) : "");
+                                return (
+                                  <div onClick={e => e.stopPropagation()} style={{ background: "rgba(99,102,241,.06)", borderTop: "1px solid rgba(99,102,241,.18)", padding: "13px 14px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                      <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase" }}>Enter Actual Values</div>
+                                      <button className="btn" onClick={() => setEditing(null)} style={{ background: "none", border: "none", color: "#475569", fontSize: 14, padding: "0 2px" }}>✕</button>
+                                    </div>
+
+                                    {/* Rate type */}
+                                    <div style={{ marginBottom: 12 }}>
+                                      <div style={{ fontSize: 9, color: "#64748b", marginBottom: 6 }}>RATE TYPE</div>
+                                      <div style={{ display: "flex", gap: 6 }}>
+                                        {[
+                                          { val: "mc",     label: "MC $3.75",    color: "#fcd34d", border: "rgba(251,191,36,.4)",  bg: "rgba(251,191,36,.12)" },
+                                          { val: "client", label: "Client $5.50", color: "#6ee7b7", border: "rgba(16,185,129,.4)", bg: "rgba(16,185,129,.12)" },
+                                          { val: "mixed",  label: "Mixed",        color: "#c4b5fd", border: "rgba(167,139,250,.4)",bg: "rgba(167,139,250,.12)" },
+                                        ].map(r => (
+                                          <button key={r.val} className="btn" onClick={() => handleEditChange("rateType", r.val)} style={{
+                                            flex: 1,
+                                            background: editVal.rateType === r.val ? r.bg : "rgba(255,255,255,.04)",
+                                            border: `1px solid ${editVal.rateType === r.val ? r.border : "rgba(255,255,255,.1)"}`,
+                                            borderRadius: 8, padding: "7px 6px", fontSize: 10,
+                                            color: editVal.rateType === r.val ? r.color : "#64748b",
+                                          }}>
+                                            {r.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Mixed hours breakdown */}
+                                    {isMixed && (
+                                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10, background: "rgba(167,139,250,.06)", border: "1px solid rgba(167,139,250,.18)", borderRadius: 9, padding: "10px 12px" }}>
+                                        {[
+                                          { label: "MC Hours",     key: "mcHours",     color: "#fcd34d", placeholder: "e.g. 15.70" },
+                                          { label: "Client Hours", key: "clientHours", color: "#6ee7b7", placeholder: "e.g. 79.88" },
+                                        ].map(f => (
+                                          <div key={f.key}>
+                                            <div style={{ fontSize: 9, color: "#64748b", marginBottom: 4 }}>{f.label}</div>
+                                            <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
+                                              onChange={e => handleEditChange(f.key, e.target.value)}
+                                              style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                                          </div>
+                                        ))}
+                                        <div>
+                                          <div style={{ fontSize: 9, color: "#64748b", marginBottom: 4 }}>Auto USD</div>
+                                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#c4b5fd", padding: "7px 9px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(167,139,250,.2)", borderRadius: 7 }}>
+                                            ${autoUSD || "0.00"}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Main fields */}
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                                      {[
+                                        { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750",                  color: "#a5b4fc" },
+                                        { label: isMixed ? "USD (auto)" : "USD", key: "usd", placeholder: isMixed ? autoUSD || "auto" : "e.g. 400", color: "#6ee7b7" },
+                                        { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85",                  color: "#fcd34d" },
+                                        { label: isMixed ? "Hrs (auto)" : "Hours", key: "hours", placeholder: isMixed ? `${mcH + clH}` : "e.g. 80", color: "#94a3b8" },
+                                      ].map(f => (
+                                        <div key={f.key}>
+                                          <div style={{ fontSize: 9, color: "#64748b", marginBottom: 4 }}>{f.label}</div>
+                                          <input type="number" placeholder={f.placeholder}
+                                            value={f.key === "php" ? displayPhp : f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
+                                            onChange={e => handleEditChange(f.key, e.target.value)}
+                                            style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                      <button className="btn" onClick={() => saveActual(cycle.key, displayPhp)} style={{ background: "rgba(16,185,129,.15)", border: "1px solid rgba(16,185,129,.35)", borderRadius: 8, padding: "8px 18px", fontSize: 11, color: "#6ee7b7" }}>
+                                        ✓ Save Payslip
+                                      </button>
+                                      {actuals[cycle.key] && (
+                                        <button className="btn" onClick={() => removeActual(cycle.key)} style={{ background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)", borderRadius: 8, padding: "8px 16px", fontSize: 11, color: "#fca5a5" }}>
+                                          Remove
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
-
-                    {/* Edit panel */}
-                    {isEditing && (() => {
-                      const isMixed = editVal.rateType === "mixed";
-                      const mcH  = parseFloat(editVal.mcHours)     || 0;
-                      const clH  = parseFloat(editVal.clientHours) || 0;
-                      const autoUSD = isMixed
-                        ? (mcH * MASTER_RATE + clH * CLIENT_RATE).toFixed(2)
-                        : editVal.rateType === "mc"
-                          ? ((parseFloat(editVal.hours) || 0) * MASTER_RATE).toFixed(2)
-                          : ((parseFloat(editVal.hours) || 0) * CLIENT_RATE).toFixed(2);
-                      const displayUSD = editVal.usd || autoUSD;
-                      const autoPhp = displayUSD && editVal.fxRate
-                        ? Math.round(parseFloat(displayUSD) * parseFloat(editVal.fxRate))
-                        : "";
-                      const displayPhp = editVal.php || (autoPhp > 0 ? String(autoPhp) : "");
-                      return (
-                        <div style={{ background: "rgba(99,102,241,.06)",
-                          borderTop: "1px solid rgba(99,102,241,.2)", padding: "13px 14px" }}>
-                          <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
-                            Enter Actual Payslip Values
-                          </div>
-
-                          {/* Rate type selector */}
-                          <div style={{ marginBottom: 12 }}>
-                            <div style={{ fontSize: 9, color: "#475569", marginBottom: 6 }}>RATE TYPE</div>
-                            <div style={{ display: "flex", gap: 6 }}>
-                              {[
-                                { val: "mc",     label: "Masterclass $3.75", color: "#fcd34d", border: "rgba(251,191,36,.4)",  bg: "rgba(251,191,36,.12)" },
-                                { val: "client", label: "Client $5.50",      color: "#6ee7b7", border: "rgba(16,185,129,.4)",  bg: "rgba(16,185,129,.12)" },
-                                { val: "mixed",  label: "Mixed",             color: "#c4b5fd", border: "rgba(167,139,250,.4)", bg: "rgba(167,139,250,.12)" },
-                              ].map(r => (
-                                <button key={r.val} className="btn" onClick={() => handleEditChange("rateType", r.val)}
-                                  style={{
-                                    background: editVal.rateType === r.val ? r.bg : "rgba(255,255,255,.04)",
-                                    border: `1px solid ${editVal.rateType === r.val ? r.border : "rgba(255,255,255,.1)"}`,
-                                    borderRadius: 8, padding: "6px 12px", fontSize: 10,
-                                    color: editVal.rateType === r.val ? r.color : "#475569",
-                                  }}>
-                                  {r.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Mixed: MC hours + Client hours */}
-                          {isMixed && (
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10,
-                              background: "rgba(167,139,250,.06)", border: "1px solid rgba(167,139,250,.18)",
-                              borderRadius: 9, padding: "10px 12px" }}>
-                              {[
-                                { label: "MC Hours",     key: "mcHours",     color: "#fcd34d", placeholder: "e.g. 15.70" },
-                                { label: "Client Hours", key: "clientHours", color: "#6ee7b7", placeholder: "e.g. 79.88" },
-                              ].map(f => (
-                                <div key={f.key}>
-                                  <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
-                                  <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
-                                    onChange={e => handleEditChange(f.key, e.target.value)}
-                                    style={{ width: "100%", background: "rgba(255,255,255,.05)",
-                                      border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
-                                      fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
-                                </div>
-                              ))}
-                              <div>
-                                <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>Auto USD</div>
-                                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#c4b5fd",
-                                  padding: "7px 9px", background: "rgba(255,255,255,.03)",
-                                  border: "1px solid rgba(167,139,250,.2)", borderRadius: 7 }}>
-                                  ${autoUSD || "0.00"}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* PHP, USD, FX Rate, Hours */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
-                            {[
-                              { label: "PHP Amount *", key: "php",    placeholder: "e.g. 24750", color: "#a5b4fc" },
-                              { label: isMixed ? "USD (auto-filled)" : "USD Amount",
-                                key: "usd",    placeholder: isMixed ? autoUSD || "auto" : "e.g. 400",   color: "#6ee7b7" },
-                              { label: "FX Rate",      key: "fxRate", placeholder: "e.g. 61.85", color: "#fcd34d" },
-                              { label: isMixed ? "Hours (auto)" : "Hours",
-                                key: "hours",  placeholder: isMixed ? `${mcH + clH}` : "e.g. 80", color: "#94a3b8" },
-                            ].map(f => (
-                              <div key={f.key}>
-                                <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
-                                <input type="number" placeholder={f.placeholder}
-                                  value={f.key === "php" ? displayPhp : f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
-                                  onChange={e => handleEditChange(f.key, e.target.value)}
-                                  style={{ width: "100%", background: "rgba(255,255,255,.05)",
-                                    border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
-                                    fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
-                              </div>
-                            ))}
-                          </div>
-
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <button className="btn" onClick={() => saveActual(cycle.key, displayPhp)} style={{
-                              background: "rgba(16,185,129,.15)", border: "1px solid rgba(16,185,129,.35)",
-                              borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#6ee7b7" }}>
-                              ✓ Save Payslip
-                            </button>
-                            {actuals[cycle.key] && (
-                              <button className="btn" onClick={() => removeActual(cycle.key)} style={{
-                                background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)",
-                                borderRadius: 8, padding: "7px 16px", fontSize: 11, color: "#fca5a5" }}>
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
+                    </div>
                   </div>
                 );
               })}
@@ -862,65 +925,44 @@ export default function App() {
             {Object.entries(byMonth).map(([mk, mo]) => {
               const hasActual = mo.cycles.some(c => c.isActual || c.isLocked);
               return (
-                <div key={mk} style={{ background: "rgba(255,255,255,.02)",
-                  border: "1px solid rgba(255,255,255,.06)", borderRadius: 15, overflow: "hidden" }}>
-                  <div style={{ background: "rgba(255,255,255,.03)", padding: "10px 16px",
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+                <div key={mk} style={{ background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 15, overflow: "hidden" }}>
+                  <div style={{ background: "rgba(255,255,255,.03)", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                     <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>{mo.label}</div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#a5b4fc" }}>{php(mo.totalPhp)}</div>
-                      <div style={{ fontSize: 9, color: "#334155" }}>{usd(mo.totalUsd)}</div>
+                      <div style={{ fontSize: 9, color: "#64748b" }}>{usd(mo.totalUsd)}</div>
                     </div>
                   </div>
                   <div style={{ padding: "8px 16px 0" }}>
                     <Bar pct={(mo.totalPhp / maxMonthPhp) * 100} color={hasActual ? "#10b981" : "#1e3a2f"} h={3} />
                   </div>
                   {mo.cycles.map((c, ci) => (
-                    <div key={c.key} style={{ padding: "10px 16px",
-                      borderTop: ci > 0 ? "1px solid rgba(255,255,255,.04)" : "none",
-                      display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center" }}>
+                    <div key={c.key} style={{ padding: "10px 16px", borderTop: ci > 0 ? "1px solid rgba(255,255,255,.04)" : "none", display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center" }}>
                       <div>
-                        <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>
-                          {c.startStr} – {c.endStr} · {c.hours}h ({c.days}d)
-                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{c.startStr} – {c.endStr} · {c.hours}h ({c.days}d)</div>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                           <RateBadge label={c.rateNote} />
                           <StatusBadge isActual={c.isActual} isLocked={c.isLocked} />
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13,
-                          color: c.isLocked ? "#a5b4fc" : c.isActual ? "#6ee7b7" : "#475569" }}>
-                          {php(c.php)}
-                        </div>
-                        <div style={{ fontSize: 9, color: "#334155" }}>@₱{c.fxUsed.toFixed(2)}</div>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: c.isLocked ? "#a5b4fc" : c.isActual ? "#6ee7b7" : "#64748b" }}>{php(c.php)}</div>
+                        <div style={{ fontSize: 9, color: "#64748b" }}>@₱{c.fxUsed.toFixed(2)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               );
             })}
-
-            <div style={{ background: "rgba(99,102,241,.07)", border: "1px solid rgba(99,102,241,.2)",
-              borderRadius: 14, padding: "16px 18px",
-              display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ background: "rgba(99,102,241,.07)", border: "1px solid rgba(99,102,241,.2)", borderRadius: 14, padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 9, color: "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>
-                  2026 Total Gross
-                </div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 22, color: "#a5b4fc", fontWeight: 600 }}>
-                  <AnimNum value={totalPhp} />
-                </div>
-                <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>
-                  {php(confirmedPhp)} confirmed · {php(estimatedPhp)} estimated
-                </div>
+                <div style={{ fontSize: 9, color: "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>2026 Total Gross</div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 22, color: "#a5b4fc", fontWeight: 600 }}><AnimNum value={totalPhp} /></div>
+                <div style={{ fontSize: 10, color: "#475569", marginTop: 3 }}>{php(confirmedPhp)} confirmed · {php(estimatedPhp)} estimated</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 9, color: "#334155", marginBottom: 3 }}>avg per payout</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: "#6366f1" }}>
-                  {php(totalPhp / totalCycles)}
-                </div>
+                <div style={{ fontSize: 9, color: "#475569", marginBottom: 3 }}>avg per payout</div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: "#6366f1" }}>{php(totalPhp / totalCycles)}</div>
               </div>
             </div>
           </div>
@@ -930,11 +972,10 @@ export default function App() {
         {tab === "budget" && (
           <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* Payslip source info */}
-            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)",
-              borderRadius: 14, padding: "14px 16px" }}>
+            {/* Payslip source */}
+            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 14, padding: "14px 16px" }}>
               <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
-                Income from Payslip Tracker
+                Income — from Payslip Tracker
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
@@ -942,112 +983,82 @@ export default function App() {
                   { label: "C2", cycle: budgetC2Cycle, data: budgetC2Data, income: budgetC2 },
                 ].map(({ label, cycle, data, income }) => (
                   <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>
-                      {label} · Paid {cycle?.paidLabel || "—"}
-                    </div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: data?.isActual ? "#6ee7b7" : "#a5b4fc", fontWeight: 600 }}>
-                      ₱{income.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: 9, color: data?.isActual ? "#6ee7b7" : "#475569", marginTop: 3 }}>
-                      {data?.isActual ? "✓ actual payslip" : "~ estimated"}
-                    </div>
-                    {cycle && (
-                      <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>
-                        {cycle.startStr} – {cycle.endStr}
-                      </div>
-                    )}
+                    <div style={{ fontSize: 9, color: "#64748b", marginBottom: 4 }}>{label} · Paid {cycle?.paidLabel || "—"}</div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: data?.isActual ? "#6ee7b7" : "#a5b4fc", fontWeight: 600 }}>₱{income.toLocaleString()}</div>
+                    <div style={{ fontSize: 9, color: data?.isActual ? "#6ee7b7" : "#64748b", marginTop: 3 }}>{data?.isActual ? "✓ actual" : "~ estimated"}</div>
+                    {cycle && <div style={{ fontSize: 9, color: "#475569", marginTop: 2 }}>{cycle.startStr} – {cycle.endStr}</div>}
                   </div>
                 ))}
               </div>
               <div style={{ marginTop: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#475569", marginBottom: 5 }}>
-                  <span>Combined payout</span>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 5 }}>
+                  <span>Combined</span>
                   <span style={{ fontFamily: "'DM Mono', monospace", color: "#a5b4fc" }}>₱{budgetMonthly.toLocaleString()}</span>
                 </div>
-                <PBar value={budgetMonthly} max={budgetMonthly} color="#6366f1" animate={false} />
+                <Bar pct={100} color="#6366f1" h={3} />
               </div>
             </div>
 
-            {/* Leak Warning */}
-            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
-              borderRadius: 16, padding: "18px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                <div style={{ fontSize: 11, color: "#f87171", letterSpacing: 1, textTransform: "uppercase" }}>⚠ Primary Leak Detected</div>
+            {/* Leak warning — bold hierarchy */}
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.28)", borderRadius: 16, padding: "20px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+                <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase" }}>⚠ Primary Leak Detected</div>
               </div>
-              <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fca5a5", marginBottom: 6 }}>
-                GrabFood = ₱10,000/month gone
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: "#fca5a5", marginBottom: 4, lineHeight: 1.1 }}>
+                ₱10,000<span style={{ fontSize: 14, color: "#f87171", fontWeight: 600 }}>/month</span>
               </div>
-              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginBottom: 12 }}>
-                ₱1,000/day × 10 days = savings potential wiped out. That's{" "}
-                <span style={{ color: "#fca5a5", fontWeight: 600 }}>
-                  {Math.round((10000 / budgetMonthly) * 100)}% of your ₱{budgetMonthly.toLocaleString()} income
-                </span>{" "}
-                gone before bills.
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>= GrabFood spending</div>
+              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, marginBottom: 14 }}>
+                That's{" "}
+                <span style={{ color: "#fca5a5", fontWeight: 700 }}>{Math.round((10000 / budgetMonthly) * 100)}% of your ₱{budgetMonthly.toLocaleString()} income</span>
+                {" "}before a single bill is paid.
               </div>
-              <PBar value={1600} max={budgetMonthly} color="#ef4444" />
+              <PBar value={1600} max={budgetMonthly} color="#ef4444" showPct />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginTop: 5 }}>
                 <span>Budget cap ₱1,600</span><span>Income ₱{budgetMonthly.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Savings Goal */}
-            <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)",
-              borderRadius: 16, padding: "18px 20px" }}>
-              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
-                Savings Goal — Month 3 Target
-              </div>
+            {/* Savings goal */}
+            <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 16, padding: "18px" }}>
+              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Savings Goal — 3-Month Target</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#6ee7b7", fontWeight: 600 }}>
-                    ₱{BUDGET_DATA.savings.target.toLocaleString()}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{BUDGET_DATA.savings.label}</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#6ee7b7", fontWeight: 600 }}>₱{BUDGET_DATA.savings.target.toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{BUDGET_DATA.savings.label}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 10, color: "#475569" }}>Monthly contribution</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, color: "#10b981" }}>
-                    ₱{BUDGET_DATA.savings.monthly.toLocaleString()}
-                  </div>
-                  <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>
-                    {Math.round((BUDGET_DATA.savings.monthly / budgetMonthly) * 100)}% of income
-                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>Monthly</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: "#10b981" }}>₱{BUDGET_DATA.savings.monthly.toLocaleString()}</div>
+                  <div style={{ fontSize: 9, color: "#475569", marginTop: 2 }}>{Math.round((BUDGET_DATA.savings.monthly / budgetMonthly) * 100)}% of income</div>
                 </div>
               </div>
-              <PBar value={BUDGET_DATA.savings.monthly} max={BUDGET_DATA.savings.target} color="#10b981" />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#334155" }}>
+              <PBar value={BUDGET_DATA.savings.monthly} max={BUDGET_DATA.savings.target} color="#10b981" showPct />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#475569" }}>
                 <span>Month 1 → ₱{BUDGET_DATA.savings.monthly.toLocaleString()}</span>
-                <span>Target in {BUDGET_DATA.savings.months} months</span>
+                <span>Done in {BUDGET_DATA.savings.months} months</span>
               </div>
             </div>
 
-            {/* Cutoff 1 */}
+            {/* Cutoff cards */}
             <CutoffCard
-              title={`Cutoff 1 — ${budgetC1Cycle ? `Paid ${budgetC1Cycle.paidLabel}` : "First Payday"}${budgetC1Data?.isActual ? " ✓" : " ~"}`}
-              income={budgetC1}
-              items={BUDGET_DATA.cutoff1.budget}
-              carryOver={null}
+              title={`Cutoff 1 — Paid ${budgetC1Cycle?.paidLabel || "—"}${budgetC1Data?.isActual ? " ✓" : " ~"}`}
+              income={budgetC1} items={BUDGET_DATA.cutoff1.budget} carryOver={null}
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#334155", fontSize: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
               <span>₱{dynamicCarryOver.toLocaleString()} carry-over →</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
-
-            {/* Cutoff 2 */}
             <CutoffCard
-              title={`Cutoff 2 — ${budgetC2Cycle ? `Paid ${budgetC2Cycle.paidLabel}` : "Second Payday"}${budgetC2Data?.isActual ? " ✓" : " ~"}`}
-              income={budgetC2}
-              items={BUDGET_DATA.cutoff2.budget}
-              carryOver={dynamicCarryOver}
+              title={`Cutoff 2 — Paid ${budgetC2Cycle?.paidLabel || "—"}${budgetC2Data?.isActual ? " ✓" : " ~"}`}
+              income={budgetC2} items={BUDGET_DATA.cutoff2.budget} carryOver={dynamicCarryOver}
             />
 
             {/* CC Strategy */}
-            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
-              borderRadius: 16, padding: "18px 20px" }}>
-              <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
-                Credit Card Strategy
-              </div>
+            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)", borderRadius: 16, padding: "18px" }}>
+              <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Credit Card Strategy</div>
               {[
                 "🚫 Do NOT use the card for new purchases",
                 "✅ Pay ₱8,950 every C2 — full amount, on time",
@@ -1055,25 +1066,21 @@ export default function App() {
                 "🔄 Ask about 0% installment restructuring",
                 "💸 If interest > 3%/mo, explore BDO/BPI/Tonik personal loan",
               ].map((s, i) => (
-                <div key={i} style={{ fontSize: 13, color: "#94a3b8", padding: "7px 0",
-                  borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.5 }}>
-                  {s}
-                </div>
+                <div key={i} style={{ fontSize: 13, color: "#94a3b8", padding: "8px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.5 }}>{s}</div>
               ))}
             </div>
 
             {/* 3 Rules */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {[
-                { icon: "🛡", label: "Survival First", desc: "Pay bills before anything" },
+                { icon: "🛡", label: "Survival First", desc: "Bills before anything" },
                 { icon: "⚖", label: "Then Stability", desc: "No new debt, track all" },
                 { icon: "📈", label: "Then Savings",   desc: "₱6,500 locked monthly" },
               ].map((r, i) => (
-                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 14, padding: "16px 12px", textAlign: "center" }}>
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 10px", textAlign: "center" }}>
                   <div style={{ fontSize: 22, marginBottom: 8 }}>{r.icon}</div>
-                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600, marginBottom: 4 }}>{r.label}</div>
-                  <div style={{ fontSize: 11, color: "#475569" }}>{r.desc}</div>
+                  <div style={{ fontSize: 11, color: "#e2e8f0", fontWeight: 600, marginBottom: 4 }}>{r.label}</div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>{r.desc}</div>
                 </div>
               ))}
             </div>
@@ -1083,50 +1090,39 @@ export default function App() {
         {/* ════ FOOD ════ */}
         {tab === "food" && (
           <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 16, padding: "20px 22px" }}>
-              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
-                Daily Food Limits
-              </div>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 18px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>Daily Food Limits</div>
               {BUDGET_DATA.foodLimits.map((f, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "12px 0", borderBottom: i < BUDGET_DATA.foodLimits.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i < BUDGET_DATA.foodLimits.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
                   <div style={{ fontSize: 13, color: "#e2e8f0" }}>{f.label}</div>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: f.color, fontWeight: 600 }}>{f.daily}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 16, padding: "20px 22px" }}>
-              <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>
-                Weekly Grocery Budget
-              </div>
+            <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 16, padding: "20px 18px" }}>
+              <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Weekly Grocery Budget</div>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 32, color: "#86efac", fontWeight: 600, marginBottom: 4 }}>
-                ₱875 <span style={{ fontSize: 14, color: "#475569" }}>/ week</span>
+                ₱875 <span style={{ fontSize: 14, color: "#64748b" }}>/ week</span>
               </div>
-              <div style={{ fontSize: 12, color: "#475569", marginBottom: 16 }}>₱3,500 per cutoff · covers 2 people</div>
-              <PBar value={875} max={1400} color="#22c55e" />
-              <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>vs ₱1,400/week danger zone</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 14 }}>₱3,500 per cutoff · covers 2 people</div>
+              <PBar value={875} max={1400} color="#22c55e" showPct />
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 6 }}>vs ₱1,400/week danger zone</div>
             </div>
 
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 16, padding: "20px 22px" }}>
-              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>
-                Budget Protein Swaps
-              </div>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 18px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Budget Protein Swaps</div>
               {[
                 ["🥚", "Eggs",       "₱10–12 each",  "High protein, versatile"],
                 ["🐟", "Sardines",   "₱20–30/can",   "Quick, filling"],
                 ["🥩", "Pork belly", "₱180–220/kg",  "Cook in bulk"],
                 ["🌾", "Rice + ulam","₱80–100/meal", "Never skip"],
               ].map(([icon, name, price, note]) => (
-                <div key={name} style={{ display: "grid", gridTemplateColumns: "32px 1fr auto",
-                  gap: 12, alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div key={name} style={{ display: "grid", gridTemplateColumns: "32px 1fr auto", gap: 12, alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                   <span style={{ fontSize: 20 }}>{icon}</span>
                   <div>
                     <div style={{ fontSize: 13, color: "#e2e8f0" }}>{name}</div>
-                    <div style={{ fontSize: 11, color: "#475569" }}>{note}</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>{note}</div>
                   </div>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#86efac" }}>{price}</div>
                 </div>
@@ -1138,7 +1134,6 @@ export default function App() {
         {/* ════ 30-DAY PLAN ════ */}
         {tab === "30-day plan" && (
           <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Week selector */}
             <div style={{ display: "flex", gap: 8 }}>
               {[1, 2, 3, 4].map(w => (
                 <button key={w} className="btn" onClick={() => setActiveWeek(w)} style={{
@@ -1146,78 +1141,102 @@ export default function App() {
                   background: activeWeek === w ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${activeWeek === w ? "#6366f1" : "rgba(255,255,255,0.08)"}`,
                   borderRadius: 12, padding: "10px 0", fontSize: 12,
-                  color: activeWeek === w ? "#a5b4fc" : "#475569" }}>
+                  color: activeWeek === w ? "#a5b4fc" : "#64748b",
+                }}>
                   Week {w}
                   <span style={{ display: "block", fontSize: 9, color: activeWeek === w ? "#6366f1" : "#334155", marginTop: 2 }}>
-                    {budgetTasks.filter(t => t.week === w && t.done).length}/{budgetTasks.filter(t => t.week === w).length} done
+                    {budgetTasks.filter(t => t.week === w && t.done).length}/{budgetTasks.filter(t => t.week === w).length}
                   </span>
                 </button>
               ))}
             </div>
 
-            {/* Week label */}
             <div style={{ fontSize: 13, color: "#64748b" }}>
-              {{ 1: "🔍 Assess & Stop the Bleeding", 2: "⚙️ Implement the System",
-                 3: "💪 Survive on the Plan",         4: "🔒 Lock In & Reflect" }[activeWeek]}
+              {{ 1: "🔍 Assess & Stop the Bleeding", 2: "⚙️ Implement the System", 3: "💪 Survive on the Plan", 4: "🔒 Lock In & Reflect" }[activeWeek]}
             </div>
 
-            {/* Tasks */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {weekTasks.map(task => (
                 <div key={task.idx} className="task-row" onClick={() => toggleTask(task.idx)} style={{
                   display: "flex", alignItems: "flex-start", gap: 14,
                   background: task.done ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${task.done ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)"}`,
-                  borderRadius: 12, padding: "14px 16px" }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
-                    background: task.done ? "#10b981" : "transparent",
-                    border: `2px solid ${task.done ? "#10b981" : "rgba(255,255,255,0.15)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                  borderRadius: 12, padding: "14px 16px",
+                }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1, background: task.done ? "#10b981" : "transparent", border: `2px solid ${task.done ? "#10b981" : "rgba(255,255,255,0.15)"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
                     {task.done && <span style={{ color: "#fff", fontSize: 11 }}>✓</span>}
                   </div>
-                  <div style={{ fontSize: 13, color: task.done ? "#6ee7b7" : "#e2e8f0", lineHeight: 1.5,
-                    textDecoration: task.done ? "line-through" : "none", opacity: task.done ? 0.7 : 1 }}>
+                  <div style={{ fontSize: 13, color: task.done ? "#6ee7b7" : "#e2e8f0", lineHeight: 1.5, textDecoration: task.done ? "line-through" : "none", opacity: task.done ? 0.7 : 1 }}>
                     {task.label}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Week progress */}
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12, padding: "14px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: "#475569" }}>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: "#64748b" }}>
                 <span>Week {activeWeek} progress</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", color: "#a5b4fc" }}>
-                  {weekTasks.filter(t => t.done).length}/{weekTasks.length}
-                </span>
+                <span style={{ fontFamily: "'DM Mono', monospace", color: "#a5b4fc" }}>{weekTasks.filter(t => t.done).length}/{weekTasks.length}</span>
               </div>
-              <PBar value={weekTasks.filter(t => t.done).length} max={weekTasks.length} color="#6366f1" animate={false} />
+              <PBar value={weekTasks.filter(t => t.done).length} max={weekTasks.length || 1} color="#6366f1" animate={false} showPct />
             </div>
 
-            {/* Overall */}
-            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)",
-              borderRadius: 12, padding: "14px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8,
-                fontSize: 11, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase" }}>
-                <span>Overall 30-Day Progress</span>
+            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 11, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase" }}>
+                <span>Overall 30-Day</span>
                 <span style={{ fontFamily: "'DM Mono', monospace" }}>{completedTasks}/{budgetTasks.length}</span>
               </div>
-              <PBar value={completedTasks} max={budgetTasks.length} color="#6366f1" animate={false} />
+              <PBar value={completedTasks} max={budgetTasks.length} color="#6366f1" animate={false} showPct />
             </div>
 
-            {/* Reset tasks */}
-            <button className="btn" onClick={() => {
-              if (confirm("Reset all tasks to unchecked?")) {
-                setBudgetTasks(BUDGET_DATA.tasks);
-                showToast("Tasks reset");
-              }
-            }} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 10, padding: "9px 16px", fontSize: 11, color: "#475569", alignSelf: "flex-start" }}>
+            <button className="btn" onClick={() => { if (confirm("Reset all tasks?")) { setBudgetTasks(BUDGET_DATA.tasks); showToast("Tasks reset"); } }} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "9px 16px", fontSize: 11, color: "#475569", alignSelf: "flex-start" }}>
               ↺ Reset all tasks
             </button>
           </div>
         )}
+      </div>
+
+      {/* ── BOTTOM NAV ── */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(7,10,16,0.97)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderTop: "1px solid rgba(255,255,255,0.07)",
+        display: "flex",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}>
+        {NAV_TABS.map(t => {
+          const isActive = tab === t.key;
+          return (
+            <button key={t.key} className="nav-btn" onClick={() => setTab(t.key)} style={{
+              flex: 1, background: "none", border: "none", outline: "none",
+              padding: "10px 4px 8px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              color: isActive ? "#a5b4fc" : "#475569",
+              position: "relative",
+            }}>
+              {/* Active indicator bar */}
+              {isActive && (
+                <div style={{
+                  position: "absolute", top: 0, left: "20%", right: "20%", height: 2,
+                  background: "#6366f1", borderRadius: "0 0 99px 99px",
+                  boxShadow: "0 0 8px #6366f188",
+                }} />
+              )}
+              {t.icon}
+              <span style={{ fontSize: 9, letterSpacing: 0.3, fontWeight: isActive ? 600 : 400 }}>
+                {t.label}
+              </span>
+              {/* Tasks badge */}
+              {t.key === "30-day plan" && completedTasks > 0 && (
+                <div style={{ position: "absolute", top: 6, right: "14%", background: "#6366f1", borderRadius: 99, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#fff", padding: "0 3px" }}>
+                  {completedTasks}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
