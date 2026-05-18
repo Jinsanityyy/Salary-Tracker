@@ -295,7 +295,7 @@ export default function App() {
     if (!file || !key) return;
 
     if (!apiKey.trim()) {
-      setUploadErrors(prev => ({ ...prev, [key]: "Enter your Anthropic API key (🔑 AI Key button above)" }));
+      setUploadErrors(prev => ({ ...prev, [key]: "Enter your Google AI key (🔑 AI Key button above)" }));
       return;
     }
 
@@ -304,36 +304,26 @@ export default function App() {
 
     try {
       const base64    = await fileToBase64(file);
-      const isPdf     = file.type === "application/pdf";
-      const mediaType = isPdf ? "application/pdf" : (file.type || "image/jpeg");
+      const mediaType = file.type || "image/jpeg";
 
-      const contentBlock = isPdf
-        ? { type: "document", source: { type: "base64", media_type: mediaType, data: base64 } }
-        : { type: "image",    source: { type: "base64", media_type: mediaType, data: base64 } };
-
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey.trim(),
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              contentBlock,
-              {
-                type: "text",
-                text: `Extract payslip data and respond with JSON only, no markdown:\n{"php":<total PHP amount as number>,"usd":<USD amount as number>,"fxRate":<exchange rate as number>,"hours":<total hours worked as number>}\nUse null for any field not found.`,
-              },
-            ],
-          }],
-        }),
-      });
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: mediaType, data: base64 } },
+                {
+                  text: `Extract payslip data and respond with JSON only, no markdown:\n{"php":<total PHP amount as number>,"usd":<USD amount as number>,"fxRate":<exchange rate as number>,"hours":<total hours worked as number>}\nUse null for any field not found.`,
+                },
+              ],
+            }],
+            generationConfig: { temperature: 0, maxOutputTokens: 512 },
+          }),
+        }
+      );
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
@@ -341,7 +331,7 @@ export default function App() {
       }
 
       const data      = await resp.json();
-      const rawText   = data.content?.[0]?.text || "";
+      const rawText   = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
       const extracted = JSON.parse(rawText.replace(/```json|```/g, "").trim());
 
       setEditVal({
@@ -460,23 +450,23 @@ export default function App() {
                   width: 100, fontFamily: "'DM Mono', monospace" }} />
             )}
 
-            {/* Anthropic API key (needed for 📎 AI auto-fill) */}
+            {/* Google AI key (free — aistudio.google.com) */}
             <button className="btn" onClick={() => setShowApiKey(p => !p)} style={{
               background: showApiKey ? "rgba(167,139,250,.12)" : "rgba(255,255,255,.04)",
               border: `1px solid ${showApiKey ? "rgba(167,139,250,.4)" : "rgba(255,255,255,.08)"}`,
               borderRadius: 8, padding: "5px 11px", fontSize: 11,
               color: showApiKey ? "#c4b5fd" : "#475569" }}>
-              🔑 {apiKey ? "AI Key ✓" : "AI Key"}
+              🔑 {apiKey ? "AI Key ✓" : "AI Key (free)"}
             </button>
             {showApiKey && (
               <input
                 type="password"
-                placeholder="sk-ant-…"
+                placeholder="AIza… (Google AI Studio)"
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
                 style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(167,139,250,.3)",
                   borderRadius: 8, padding: "5px 10px", fontSize: 12, color: "#c4b5fd",
-                  width: 190, fontFamily: "'DM Mono', monospace" }}
+                  width: 210, fontFamily: "'DM Mono', monospace" }}
               />
             )}
           </div>
