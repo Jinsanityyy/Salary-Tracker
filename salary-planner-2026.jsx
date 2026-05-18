@@ -240,6 +240,37 @@ export default function App() {
     };
   }
 
+  function handleEditChange(field, value) {
+    setEditVal(prev => {
+      const next = { ...prev, [field]: value };
+
+      // Auto-compute USD from rate type + hours/days
+      if (["rateType", "hours", "mcDays", "clientDays"].includes(field)) {
+        if (next.rateType === "mc") {
+          const u = (parseFloat(next.hours) || 0) * MASTER_RATE;
+          next.usd = u > 0 ? u.toFixed(2) : "";
+        } else if (next.rateType === "client") {
+          const u = (parseFloat(next.hours) || 0) * CLIENT_RATE;
+          next.usd = u > 0 ? u.toFixed(2) : "";
+        } else if (next.rateType === "mixed") {
+          const u = (parseFloat(next.mcDays) || 0) * MASTER_RATE * HOURS
+                  + (parseFloat(next.clientDays) || 0) * CLIENT_RATE * HOURS;
+          next.usd = u > 0 ? u.toFixed(2) : "";
+          next.hours = String(((parseFloat(next.mcDays) || 0) + (parseFloat(next.clientDays) || 0)) * HOURS);
+        }
+      }
+
+      // Auto-compute PHP from USD × FX rate
+      if (["rateType", "hours", "mcDays", "clientDays", "fxRate", "usd"].includes(field)) {
+        const u  = parseFloat(next.usd)    || 0;
+        const fx = parseFloat(next.fxRate) || 0;
+        if (u > 0 && fx > 0) next.php = Math.round(u * fx).toString();
+      }
+
+      return next;
+    });
+  }
+
   function saveActual(key) {
     const p = parseFloat(editVal.php);
     if (!p || p <= 0) return;
@@ -541,7 +572,7 @@ export default function App() {
                                 { val: "client", label: "Client $5.50",      color: "#6ee7b7", border: "rgba(16,185,129,.4)",  bg: "rgba(16,185,129,.12)" },
                                 { val: "mixed",  label: "Mixed",             color: "#c4b5fd", border: "rgba(167,139,250,.4)", bg: "rgba(167,139,250,.12)" },
                               ].map(r => (
-                                <button key={r.val} className="btn" onClick={() => setEditVal(p => ({ ...p, rateType: r.val }))}
+                                <button key={r.val} className="btn" onClick={() => handleEditChange("rateType", r.val)}
                                   style={{
                                     background: editVal.rateType === r.val ? r.bg : "rgba(255,255,255,.04)",
                                     border: `1px solid ${editVal.rateType === r.val ? r.border : "rgba(255,255,255,.1)"}`,
@@ -566,7 +597,7 @@ export default function App() {
                                 <div key={f.key}>
                                   <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>{f.label}</div>
                                   <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
-                                    onChange={e => setEditVal(p => ({ ...p, [f.key]: e.target.value }))}
+                                    onChange={e => handleEditChange(f.key, e.target.value)}
                                     style={{ width: "100%", background: "rgba(255,255,255,.05)",
                                       border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px",
                                       fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
