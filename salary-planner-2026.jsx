@@ -503,6 +503,18 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
     localStorage.removeItem(`hidden_base_${cardKey}`);
   }
 
+  const [paidItems, setPaidItems] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`paid_items_${cardKey}`) || "[]"); }
+    catch { return []; }
+  });
+  function togglePaid(label) {
+    const updated = paidItems.includes(label)
+      ? paidItems.filter(l => l !== label)
+      : [...paidItems, label];
+    setPaidItems(updated);
+    localStorage.setItem(`paid_items_${cardKey}`, JSON.stringify(updated));
+  }
+
   function addExtra() {
     const amt = parseFloat(newAmt);
     if (!newLabel.trim() || !amt || amt <= 0) return;
@@ -533,12 +545,28 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
   const afterFlex    = afterBills - flexTotal;
   const inPocket     = afterFlex - savingsTotal;
 
-  const ItemRow = ({ label, amount, accent, onDelete }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "9px 0 9px 12px", borderLeft: `2px solid ${accent}`,
-      borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-      <span style={{ fontSize: 13, color: "var(--fg2)", flex: 1, letterSpacing: "-0.005em" }}>{label}</span>
-      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: "var(--fg2)", fontWeight: 500 }}>₱{amount.toLocaleString()}</span>
+  const allBudgetItems = [...billItems, ...flexItems, ...savingsItems];
+  const paidTotal      = allBudgetItems.filter(i => paidItems.includes(i.label)).reduce((a, b) => a + b.amount, 0);
+  const actualBalance  = income - paidTotal;
+
+  const ItemRow = ({ label, amount, accent, onDelete, isPaid, onTogglePaid }) => (
+    <div style={{ display: "flex", alignItems: "center",
+      padding: "9px 0",
+      borderLeft: `2px solid ${isPaid ? "#22c55e" : accent}`,
+      borderBottom: "1px solid rgba(255,255,255,0.03)",
+      background: isPaid ? "rgba(34,197,94,0.04)" : "transparent" }}>
+      <button onClick={onTogglePaid} style={{
+        background: isPaid ? "rgba(34,197,94,0.15)" : "none",
+        border: `1.5px solid ${isPaid ? "#22c55e" : "rgba(255,255,255,0.18)"}`,
+        borderRadius: "50%", width: 18, height: 18, minWidth: 18, cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        margin: "0 10px 0 10px", color: "#22c55e", fontSize: 10, padding: 0, lineHeight: 1 }}>
+        {isPaid ? "✓" : ""}
+      </button>
+      <span style={{ fontSize: 13, color: isPaid ? "var(--fg4)" : "var(--fg2)", flex: 1, letterSpacing: "-0.005em",
+        textDecoration: isPaid ? "line-through" : "none" }}>{label}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13,
+        color: isPaid ? "#22c55e" : "var(--fg2)", fontWeight: 500 }}>₱{amount.toLocaleString()}</span>
       {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "var(--fg4)", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
     </div>
   );
@@ -570,10 +598,10 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {visibleItems.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
-            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} onDelete={() => hideBaseItem(item.label)} />
+            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />
           ))}
           {extras.map((item, i) => (
-            <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} />
+            <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />
           ))}
         </div>
 
@@ -602,7 +630,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.08)" }}>
           <div style={{ fontSize: 9, color: "var(--grn)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Allowance</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" onDelete={() => hideBaseItem(item.label)} />)}
+            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />)}
           </div>
           <SubtotalRow label="Before savings" value={afterFlex} color={afterFlex >= 0 ? "var(--fg2)" : "var(--rose)"} />
         </div>
@@ -613,7 +641,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(20,184,166,0.15)", background: "rgba(20,184,166,0.04)" }}>
           <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Savings</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" onDelete={() => hideBaseItem(item.label)} />)}
+            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />)}
           </div>
         </div>
       )}
@@ -622,6 +650,33 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "6px 18px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 10, color: "var(--fg4)" }}>{hiddenBase.length} item{hiddenBase.length > 1 ? "s" : ""} hidden</span>
           <button onClick={restoreBaseItems} style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 10, cursor: "pointer", padding: "4px 0" }}>Restore all</button>
+        </div>
+      )}
+
+      {/* ── Actual Balance (paid checklist) ── */}
+      {paidItems.length > 0 && (
+        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(34,197,94,0.15)", background: "rgba(34,197,94,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500 }}>Actual Balance</div>
+            <button onClick={() => { setPaidItems([]); localStorage.removeItem(`paid_items_${cardKey}`); }}
+              style={{ background: "none", border: "none", color: "var(--fg4)", fontSize: 10, cursor: "pointer", padding: 0 }}>Clear</button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)" }}>
+              <span>Income</span>
+              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>₱{income.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#f87171" }}>
+              <span>Paid out ({paidItems.length} item{paidItems.length > 1 ? "s" : ""})</span>
+              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>−₱{paidTotal.toLocaleString()}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+            borderTop: "1px solid rgba(34,197,94,0.15)", paddingTop: 10 }}>
+            <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: "0.04em", fontWeight: 600 }}>CASH IN HAND</span>
+            <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, fontWeight: 500,
+              color: actualBalance >= 0 ? "#22c55e" : "#f43f5e" }}>₱{actualBalance.toLocaleString()}</span>
+          </div>
         </div>
       )}
 
