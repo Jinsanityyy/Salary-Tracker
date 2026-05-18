@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// ─── Rates ────────────────────────────────────────────────────────────────────
+// ─── Salary Tracker Rates ─────────────────────────────────────────────────────
 const CLIENT_RATE = 5.50;
 const MASTER_RATE = 3.75;
 const HOURS       = 8;
@@ -105,6 +105,64 @@ const ALL_CYCLES = buildCycles();
 // ─── Known locked payslips ────────────────────────────────────────────────────
 const LOCKED_PAYSLIPS = {};
 
+// ─── Financial Recovery Data ──────────────────────────────────────────────────
+const BUDGET_DATA = {
+  income: { c1: 28500, c2: 28500, monthly: 57000 },
+  cutoff1: {
+    budget: [
+      { label: "House (share)",      amount: 7500, type: "fixed" },
+      { label: "Internet",           amount: 1500, type: "fixed" },
+      { label: "Grocery",            amount: 3500, type: "variable" },
+      { label: "Personal Allowance", amount: 1500, type: "flex" },
+      { label: "Emergency Buffer",   amount: 1000, type: "flex" },
+      { label: "Savings Transfer",   amount: 3500, type: "savings" },
+    ],
+  },
+  cutoff2: {
+    budget: [
+      { label: "Electricity + Water", amount: 2000, type: "fixed" },
+      { label: "Credit Card",         amount: 8950, type: "debt" },
+      { label: "Food / Misc",         amount: 2500, type: "variable" },
+      { label: "Personal Allowance",  amount: 1000, type: "flex" },
+      { label: "Savings Transfer",    amount: 3000, type: "savings" },
+    ],
+  },
+  savings:    { monthly: 6500, target: 19500, label: "1-Month Emergency Fund", months: 3 },
+  carryOver:  10000,
+  foodLimits: [
+    { label: "Cook at home",          daily: "₱150–200",   color: "#22c55e" },
+    { label: "Tindahan / Carinderia", daily: "₱250–300",   color: "#84cc16" },
+    { label: "GrabFood (max 4x/mo)", daily: "₱400/order", color: "#f59e0b" },
+    { label: "GrabFood budget cap",  daily: "₱1,600/mo",  color: "#ef4444" },
+  ],
+  tasks: [
+    { week: 1, label: "Audit last 30 days of GrabFood orders",        done: false },
+    { week: 1, label: "Check CC: balance, interest rate, min payment", done: false },
+    { week: 1, label: "Delete or hide GrabFood app",                   done: false },
+    { week: 1, label: "Big grocery run — ₱2,500 for 2 weeks",         done: false },
+    { week: 2, label: "Open separate savings account (Tonik/Maya)",    done: false },
+    { week: 2, label: "Pay house + internet + grocery first on C1",    done: false },
+    { week: 2, label: "Cook at home min 5 days this week",             done: false },
+    { week: 2, label: "Track every peso in notes or spreadsheet",      done: false },
+    { week: 3, label: "Zero food delivery week — full challenge",      done: false },
+    { week: 3, label: "Midpoint review: where did you overspend?",    done: false },
+    { week: 3, label: "Adjust meals to budget proteins if needed",     done: false },
+    { week: 4, label: "Pay CC ₱8,950 — no partial, no excuses",       done: false },
+    { week: 4, label: "Transfer ₱3,000 to savings on C2",             done: false },
+    { week: 4, label: "Calculate actual vs target savings",            done: false },
+    { week: 4, label: "Reward: one GrabFood order (₱400 max)",        done: false },
+  ],
+};
+
+const TYPE_COLORS = {
+  fixed:    { bg: "rgba(99,102,241,0.15)",  border: "#6366f1", text: "#a5b4fc" },
+  variable: { bg: "rgba(251,191,36,0.12)",  border: "#f59e0b", text: "#fcd34d" },
+  flex:     { bg: "rgba(34,197,94,0.1)",    border: "#22c55e", text: "#86efac" },
+  savings:  { bg: "rgba(16,185,129,0.15)",  border: "#10b981", text: "#6ee7b7" },
+  debt:     { bg: "rgba(239,68,68,0.12)",   border: "#ef4444", text: "#fca5a5" },
+};
+const TYPE_LABELS = { fixed: "Fixed", variable: "Variable", flex: "Flex", savings: "Savings", debt: "Debt" };
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TODAY = new Date(2026, 4, 18);
 const php   = n => "₱" + Math.round(n).toLocaleString();
@@ -116,6 +174,7 @@ const RATE_COLORS = {
   "Mixed (5d MC + 5d Client)": { t: "#c4b5fd", bg: "rgba(167,139,250,0.11)", b: "rgba(167,139,250,0.3)" },
 };
 
+// ─── Shared Components ────────────────────────────────────────────────────────
 function RateBadge({ label }) {
   const c = RATE_COLORS[label] || { t: "#94a3b8", bg: "rgba(255,255,255,0.05)", b: "rgba(255,255,255,0.12)" };
   return (
@@ -157,6 +216,16 @@ function AnimNum({ value }) {
   return <span>₱{Math.round(v).toLocaleString()}</span>;
 }
 
+function AnimatedNumber({ value, prefix = "₱" }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let cur = 0; const step = value / 60;
+    const t = setInterval(() => { cur += step; if (cur >= value) { setV(value); clearInterval(t); } else setV(Math.floor(cur)); }, 16);
+    return () => clearInterval(t);
+  }, [value]);
+  return <span>{prefix}{v.toLocaleString()}</span>;
+}
+
 function Bar({ pct, color = "#6366f1", h = 5 }) {
   const [w, setW] = useState(0);
   useEffect(() => { const t = setTimeout(() => setW(Math.min(pct, 100)), 80); return () => clearTimeout(t); }, [pct]);
@@ -164,6 +233,82 @@ function Bar({ pct, color = "#6366f1", h = 5 }) {
     <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: h, overflow: "hidden" }}>
       <div style={{ height: "100%", width: `${w}%`, background: color, borderRadius: 99,
         transition: "width 1s ease", boxShadow: `0 0 6px ${color}44` }} />
+    </div>
+  );
+}
+
+function PBar({ value, max, color = "#10b981", animate = true }) {
+  const pct = Math.min((value / max) * 100, 100);
+  const [w, setW] = useState(0);
+  useEffect(() => { const t = setTimeout(() => setW(pct), 100); return () => clearTimeout(t); }, [pct]);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 999, height: 6, overflow: "hidden" }}>
+      <div style={{ height: "100%", width: animate ? `${w}%` : `${pct}%`, background: color,
+        borderRadius: 999, transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)", boxShadow: `0 0 8px ${color}88` }} />
+    </div>
+  );
+}
+
+function CutoffCard({ title, income, items, carryOver }) {
+  const spent     = items.filter(i => i.type !== "savings").reduce((a, b) => a + b.amount, 0);
+  const savings   = items.filter(i => i.type === "savings").reduce((a, b) => a + b.amount, 0);
+  const remaining = income - spent - savings + (carryOver || 0);
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 20, padding: "24px 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: 2, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>{title}</div>
+          <div style={{ fontSize: 24, fontFamily: "'DM Mono', monospace", color: "#f1f5f9", fontWeight: 600 }}>
+            <AnimatedNumber value={income} />
+          </div>
+        </div>
+        <div style={{ background: remaining >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+          border: `1px solid ${remaining >= 0 ? "#10b981" : "#ef4444"}`,
+          borderRadius: 10, padding: "6px 14px", fontSize: 12,
+          color: remaining >= 0 ? "#6ee7b7" : "#fca5a5", fontFamily: "'DM Mono', monospace" }}>
+          {remaining >= 0 ? "+" : ""}{remaining.toLocaleString()} left
+        </div>
+      </div>
+
+      {carryOver && (
+        <div style={{ background: "rgba(99,102,241,0.08)", border: "1px dashed rgba(99,102,241,0.4)",
+          borderRadius: 10, padding: "8px 14px", fontSize: 12, color: "#a5b4fc",
+          marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
+          <span>+ Carry-over from C1</span>
+          <span style={{ fontFamily: "'DM Mono', monospace" }}>+₱{carryOver.toLocaleString()}</span>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((item, i) => {
+          const tc = TYPE_COLORS[item.type];
+          return (
+            <div key={i} style={{ background: tc.bg, border: `1px solid ${tc.border}33`,
+              borderLeft: `3px solid ${tc.border}`, borderRadius: 10, padding: "10px 14px",
+              display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 13, color: "#e2e8f0", marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 9, color: tc.text, textTransform: "uppercase", letterSpacing: 1 }}>
+                  {TYPE_LABELS[item.type]}
+                </div>
+              </div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: tc.text, fontWeight: 600 }}>
+                ₱{item.amount.toLocaleString()}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <PBar value={spent + savings} max={income + (carryOver || 0)} color="#6366f1" />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#475569" }}>
+          <span>₱{(spent + savings).toLocaleString()} allocated</span>
+          <span>₱{(income + (carryOver || 0)).toLocaleString()} available</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -186,7 +331,16 @@ export default function App() {
   const [customFx, setCustomFx]       = useState("");
   const [toast, setToast]             = useState(null);
 
-  // Auto-save to localStorage on every change (locked entries excluded)
+  // Financial recovery state — persisted in localStorage
+  const [budgetTasks, setBudgetTasks] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("budget_tasks_v1") || "null");
+      return stored || BUDGET_DATA.tasks;
+    } catch { return BUDGET_DATA.tasks; }
+  });
+  const [activeWeek, setActiveWeek] = useState(1);
+
+  // Auto-save actuals
   useEffect(() => {
     try {
       const toStore = Object.fromEntries(
@@ -195,6 +349,11 @@ export default function App() {
       localStorage.setItem("salary_planner_actuals_v2", JSON.stringify(toStore));
     } catch {}
   }, [actuals]);
+
+  // Auto-save budget tasks
+  useEffect(() => {
+    try { localStorage.setItem("budget_tasks_v1", JSON.stringify(budgetTasks)); } catch {}
+  }, [budgetTasks]);
 
   const effectiveFx = useCustomFx && parseFloat(customFx) > 0 ? parseFloat(customFx) : LIVE_FX;
   const nextPayKey  = ALL_CYCLES.find(c => c.paidDate >= TODAY)?.key;
@@ -244,7 +403,6 @@ export default function App() {
     setEditVal(prev => {
       const next = { ...prev, [field]: value };
 
-      // Auto-compute USD from rate type + hours
       if (["rateType", "hours", "mcHours", "clientHours"].includes(field)) {
         if (next.rateType === "mc") {
           const u = (parseFloat(next.hours) || 0) * MASTER_RATE;
@@ -261,7 +419,6 @@ export default function App() {
         }
       }
 
-      // Auto-compute PHP from USD × FX rate
       if (["rateType", "hours", "mcHours", "clientHours", "fxRate", "usd"].includes(field)) {
         const u  = parseFloat(next.usd)    || 0;
         const fx = parseFloat(next.fxRate) || 0;
@@ -306,6 +463,10 @@ export default function App() {
     showToast("Removed", "error");
   }
 
+  function toggleTask(i) {
+    setBudgetTasks(prev => prev.map((t, idx) => idx === i ? { ...t, done: !t.done } : t));
+  }
+
   // Totals
   const confirmedCount = Object.keys(actuals).length;
   const totalCycles    = ALL_CYCLES.length;
@@ -328,6 +489,12 @@ export default function App() {
   });
   const maxMonthPhp = Math.max(...Object.values(byMonth).map(m => m.totalPhp));
 
+  // Budget task counts
+  const completedTasks = budgetTasks.filter(t => t.done).length;
+  const weekTasks = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
+
+  const TABS = ["timeline", "monthly summary", "budget", "food", "30-day plan"];
+
   return (
     <div style={{ minHeight: "100vh", background: "#070a10", color: "#e2e8f0",
       fontFamily: "'DM Sans', sans-serif", paddingBottom: 72 }}>
@@ -342,6 +509,8 @@ export default function App() {
         .fu { animation: fu .3s ease forwards; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
         @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .task-row { cursor: pointer; transition: all 0.2s; }
+        .task-row:hover { background: rgba(255,255,255,0.05) !important; }
       `}</style>
 
       {/* ── TOAST ── */}
@@ -369,6 +538,9 @@ export default function App() {
           </div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color: "#f1f5f9", marginBottom: 2 }}>
             Payslip <span style={{ color: "#6366f1" }}>Tracker</span>
+            <span style={{ fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#475569", fontWeight: 400, marginLeft: 10 }}>
+              + Budget Control
+            </span>
           </div>
           <div style={{ fontSize: 11, color: "#475569", marginBottom: 14 }}>
             Cycle: 11–25 → paid 5th · 26–10 → paid 20th · US holidays excluded · 8h/day
@@ -428,14 +600,20 @@ export default function App() {
 
       {/* ── TABS ── */}
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 18px" }}>
-        <div style={{ display: "flex", gap: 4, marginTop: 16, marginBottom: 18 }}>
-          {["timeline", "monthly summary"].map(t => (
+        <div style={{ display: "flex", gap: 4, marginTop: 16, marginBottom: 18, overflowX: "auto", paddingBottom: 4 }}>
+          {TABS.map(t => (
             <button key={t} className="btn" onClick={() => setTab(t)} style={{
               background: tab === t ? "rgba(99,102,241,.18)" : "transparent",
               border: `1px solid ${tab === t ? "#6366f1" : "rgba(255,255,255,.07)"}`,
               borderRadius: 99, padding: "6px 15px", fontSize: 11,
-              color: tab === t ? "#a5b4fc" : "#475569", textTransform: "capitalize", letterSpacing: .5 }}>
+              color: tab === t ? "#a5b4fc" : "#475569", textTransform: "capitalize",
+              letterSpacing: .5, whiteSpace: "nowrap" }}>
               {t}
+              {t === "30-day plan" && completedTasks > 0 && (
+                <span style={{ marginLeft: 5, fontSize: 9, color: "#6ee7b7", fontFamily: "'DM Mono', monospace" }}>
+                  {completedTasks}/{budgetTasks.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -506,10 +684,10 @@ export default function App() {
                           setEditing(cycle.key);
                           const ex = actuals[cycle.key];
                           setEditVal({
-                            php:        ex?.php        || "",
-                            usd:        ex?.usd        || "",
-                            fxRate:     ex?.fxRate     || "",
-                            hours:      ex?.hours      || "",
+                            php:         ex?.php         || "",
+                            usd:         ex?.usd         || "",
+                            fxRate:      ex?.fxRate      || "",
+                            hours:       ex?.hours       || "",
                             rateType:    ex?.rateType    || "client",
                             mcHours:     ex?.mcHours     || "",
                             clientHours: ex?.clientHours || "",
@@ -733,6 +911,254 @@ export default function App() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ════ BUDGET ════ */}
+        {tab === "budget" && (
+          <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Leak Warning */}
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: 16, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+                <div style={{ fontSize: 11, color: "#f87171", letterSpacing: 1, textTransform: "uppercase" }}>⚠ Primary Leak Detected</div>
+              </div>
+              <div style={{ fontSize: 20, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fca5a5", marginBottom: 6 }}>
+                GrabFood = ₱10,000/month gone
+              </div>
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginBottom: 12 }}>
+                ₱1,000/day × 10 days = savings potential wiped out. This single habit is the difference between saving ₱6,500/month or saving ₱0.
+              </div>
+              <PBar value={1600} max={10000} color="#ef4444" />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginTop: 5 }}>
+                <span>Budget cap ₱1,600</span><span>Danger zone ₱10,000</span>
+              </div>
+            </div>
+
+            {/* Savings Goal */}
+            <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)",
+              borderRadius: 16, padding: "18px 20px" }}>
+              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
+                Savings Goal — Month 3 Target
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#6ee7b7", fontWeight: 600 }}>
+                    ₱{BUDGET_DATA.savings.target.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{BUDGET_DATA.savings.label}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10, color: "#475569" }}>Monthly contribution</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, color: "#10b981" }}>
+                    ₱{BUDGET_DATA.savings.monthly.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              <PBar value={BUDGET_DATA.savings.monthly} max={BUDGET_DATA.savings.target} color="#10b981" />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#334155" }}>
+                <span>Month 1 → ₱{BUDGET_DATA.savings.monthly.toLocaleString()}</span>
+                <span>Target in {BUDGET_DATA.savings.months} months</span>
+              </div>
+            </div>
+
+            {/* Cutoff 1 */}
+            <CutoffCard
+              title="Cutoff 1 — First Payday"
+              income={BUDGET_DATA.income.c1}
+              items={BUDGET_DATA.cutoff1.budget}
+              carryOver={null}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#334155", fontSize: 12 }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+              <span>₱{BUDGET_DATA.carryOver.toLocaleString()} carry-over →</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+            </div>
+
+            {/* Cutoff 2 */}
+            <CutoffCard
+              title="Cutoff 2 — Second Payday"
+              income={BUDGET_DATA.income.c2}
+              items={BUDGET_DATA.cutoff2.budget}
+              carryOver={BUDGET_DATA.carryOver}
+            />
+
+            {/* CC Strategy */}
+            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: 16, padding: "18px 20px" }}>
+              <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+                Credit Card Strategy
+              </div>
+              {[
+                "🚫 Do NOT use the card for new purchases",
+                "✅ Pay ₱8,950 every C2 — full amount, on time",
+                "➕ Add ₱500–1,000 extra when possible to cut interest",
+                "🔄 Ask about 0% installment restructuring",
+                "💸 If interest > 3%/mo, explore BDO/BPI/Tonik personal loan",
+              ].map((s, i) => (
+                <div key={i} style={{ fontSize: 13, color: "#94a3b8", padding: "7px 0",
+                  borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.5 }}>
+                  {s}
+                </div>
+              ))}
+            </div>
+
+            {/* 3 Rules */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {[
+                { icon: "🛡", label: "Survival First", desc: "Pay bills before anything" },
+                { icon: "⚖", label: "Then Stability", desc: "No new debt, track all" },
+                { icon: "📈", label: "Then Savings",   desc: "₱6,500 locked monthly" },
+              ].map((r, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 14, padding: "16px 12px", textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>{r.icon}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600, marginBottom: 4 }}>{r.label}</div>
+                  <div style={{ fontSize: 11, color: "#475569" }}>{r.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════ FOOD ════ */}
+        {tab === "food" && (
+          <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 16, padding: "20px 22px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+                Daily Food Limits
+              </div>
+              {BUDGET_DATA.foodLimits.map((f, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "12px 0", borderBottom: i < BUDGET_DATA.foodLimits.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <div style={{ fontSize: 13, color: "#e2e8f0" }}>{f.label}</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: f.color, fontWeight: 600 }}>{f.daily}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)",
+              borderRadius: 16, padding: "20px 22px" }}>
+              <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>
+                Weekly Grocery Budget
+              </div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 32, color: "#86efac", fontWeight: 600, marginBottom: 4 }}>
+                ₱875 <span style={{ fontSize: 14, color: "#475569" }}>/ week</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#475569", marginBottom: 16 }}>₱3,500 per cutoff · covers 2 people</div>
+              <PBar value={875} max={1400} color="#22c55e" />
+              <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>vs ₱1,400/week danger zone</div>
+            </div>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 16, padding: "20px 22px" }}>
+              <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>
+                Budget Protein Swaps
+              </div>
+              {[
+                ["🥚", "Eggs",       "₱10–12 each",  "High protein, versatile"],
+                ["🐟", "Sardines",   "₱20–30/can",   "Quick, filling"],
+                ["🥩", "Pork belly", "₱180–220/kg",  "Cook in bulk"],
+                ["🌾", "Rice + ulam","₱80–100/meal", "Never skip"],
+              ].map(([icon, name, price, note]) => (
+                <div key={name} style={{ display: "grid", gridTemplateColumns: "32px 1fr auto",
+                  gap: 12, alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <span style={{ fontSize: 20 }}>{icon}</span>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#e2e8f0" }}>{name}</div>
+                    <div style={{ fontSize: 11, color: "#475569" }}>{note}</div>
+                  </div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#86efac" }}>{price}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ════ 30-DAY PLAN ════ */}
+        {tab === "30-day plan" && (
+          <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Week selector */}
+            <div style={{ display: "flex", gap: 8 }}>
+              {[1, 2, 3, 4].map(w => (
+                <button key={w} className="btn" onClick={() => setActiveWeek(w)} style={{
+                  flex: 1,
+                  background: activeWeek === w ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${activeWeek === w ? "#6366f1" : "rgba(255,255,255,0.08)"}`,
+                  borderRadius: 12, padding: "10px 0", fontSize: 12,
+                  color: activeWeek === w ? "#a5b4fc" : "#475569" }}>
+                  Week {w}
+                  <span style={{ display: "block", fontSize: 9, color: activeWeek === w ? "#6366f1" : "#334155", marginTop: 2 }}>
+                    {budgetTasks.filter(t => t.week === w && t.done).length}/{budgetTasks.filter(t => t.week === w).length} done
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Week label */}
+            <div style={{ fontSize: 13, color: "#64748b" }}>
+              {{ 1: "🔍 Assess & Stop the Bleeding", 2: "⚙️ Implement the System",
+                 3: "💪 Survive on the Plan",         4: "🔒 Lock In & Reflect" }[activeWeek]}
+            </div>
+
+            {/* Tasks */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {weekTasks.map(task => (
+                <div key={task.idx} className="task-row" onClick={() => toggleTask(task.idx)} style={{
+                  display: "flex", alignItems: "flex-start", gap: 14,
+                  background: task.done ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${task.done ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)"}`,
+                  borderRadius: 12, padding: "14px 16px" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                    background: task.done ? "#10b981" : "transparent",
+                    border: `2px solid ${task.done ? "#10b981" : "rgba(255,255,255,0.15)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                    {task.done && <span style={{ color: "#fff", fontSize: 11 }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize: 13, color: task.done ? "#6ee7b7" : "#e2e8f0", lineHeight: 1.5,
+                    textDecoration: task.done ? "line-through" : "none", opacity: task.done ? 0.7 : 1 }}>
+                    {task.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Week progress */}
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: "#475569" }}>
+                <span>Week {activeWeek} progress</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", color: "#a5b4fc" }}>
+                  {weekTasks.filter(t => t.done).length}/{weekTasks.length}
+                </span>
+              </div>
+              <PBar value={weekTasks.filter(t => t.done).length} max={weekTasks.length} color="#6366f1" animate={false} />
+            </div>
+
+            {/* Overall */}
+            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)",
+              borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8,
+                fontSize: 11, color: "#6366f1", letterSpacing: 1, textTransform: "uppercase" }}>
+                <span>Overall 30-Day Progress</span>
+                <span style={{ fontFamily: "'DM Mono', monospace" }}>{completedTasks}/{budgetTasks.length}</span>
+              </div>
+              <PBar value={completedTasks} max={budgetTasks.length} color="#6366f1" animate={false} />
+            </div>
+
+            {/* Reset tasks */}
+            <button className="btn" onClick={() => {
+              if (confirm("Reset all tasks to unchecked?")) {
+                setBudgetTasks(BUDGET_DATA.tasks);
+                showToast("Tasks reset");
+              }
+            }} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, padding: "9px 16px", fontSize: 11, color: "#475569", alignSelf: "flex-start" }}>
+              ↺ Reset all tasks
+            </button>
           </div>
         )}
       </div>
