@@ -336,150 +336,117 @@ function CutoffCard({ title, income, items, carryOver, cardKey }) {
     localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
   }
 
-  const allBillItems = [...items.filter(i => ["fixed", "debt", "variable"].includes(i.type)), ...extras];
-  const billItems    = allBillItems;
+  const billItems    = [...items.filter(i => ["fixed","debt","variable"].includes(i.type)), ...extras];
   const flexItems    = items.filter(i => i.type === "flex");
   const savingsItems = items.filter(i => i.type === "savings");
 
   const billsTotal   = billItems.reduce((a, b) => a + b.amount, 0);
   const flexTotal    = flexItems.reduce((a, b) => a + b.amount, 0);
   const savingsTotal = savingsItems.reduce((a, b) => a + b.amount, 0);
-  const totalOut     = billsTotal + flexTotal + savingsTotal;
 
   const available    = income + (carryOver || 0);
-  const inPocket     = available - totalOut;
-  const usedPct      = Math.min((totalOut / available) * 100, 100);
+  const afterBills   = available - billsTotal;
+  const afterFlex    = afterBills - flexTotal;
+  const inPocket     = afterFlex - savingsTotal;
 
-  const Row = ({ label, amount, accent }) => (
+  const ItemRow = ({ label, amount, accent, onDelete }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "8px 0 8px 12px", borderLeft: `2px solid ${accent}` }}>
-      <span style={{ fontSize: 13, color: "#94a3b8" }}>{label}</span>
-      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#e2e8f0" }}>₱{amount.toLocaleString()}</span>
+      padding: "7px 0 7px 10px", borderLeft: `2px solid ${accent}` }}>
+      <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>{label}</span>
+      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#cbd5e1" }}>₱{amount.toLocaleString()}</span>
+      {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
+    </div>
+  );
+
+  const SubtotalRow = ({ label, value, color = "#94a3b8" }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+      padding: "9px 0 4px", borderTop: "1px dashed rgba(255,255,255,0.07)", marginTop: 8 }}>
+      <span style={{ fontSize: 11, color: "#475569" }}>{label}</span>
+      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color, fontWeight: 600 }}>₱{value.toLocaleString()}</span>
     </div>
   );
 
   return (
     <div style={{ background: "#0d1119", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden" }}>
 
-      {/* ── Top: 3 numbers ── */}
-      <div style={{ padding: "18px 18px 14px" }}>
-        <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>{title}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0, alignItems: "center", marginBottom: 14 }}>
-          <div>
-            <div style={{ fontSize: 10, color: "#64748b", marginBottom: 3 }}>SAHOD</div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#e2e8f0", fontWeight: 700 }}>₱{available.toLocaleString()}</div>
-            {carryOver > 0 && <div style={{ fontSize: 10, color: "#6366f1", marginTop: 2 }}>incl. ₱{carryOver.toLocaleString()} carry-over</div>}
-          </div>
-          <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.07)", margin: "0 14px" }} />
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "#64748b", marginBottom: 3 }}>NATITIRA</div>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20,
-              color: inPocket >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 700 }}>
-              ₱{inPocket.toLocaleString()}
-            </div>
-            <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{Math.round((inPocket / available) * 100)}% ng sahod</div>
-          </div>
-        </div>
-
-        {/* progress bar */}
-        <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${usedPct}%`,
-            background: usedPct > 90 ? "#ef4444" : usedPct > 75 ? "#f59e0b" : "#6366f1",
-            borderRadius: 99, transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: "#475569" }}>
-          <span>₱{totalOut.toLocaleString()} ginagastos</span>
-          <span>{Math.round(usedPct)}% ng sahod</span>
+      {/* ── Header: title + sahod only ── */}
+      <div style={{ padding: "16px 18px 14px" }}>
+        <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <div style={{ fontSize: 10, color: "#64748b" }}>SAHOD</div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 700 }}>₱{available.toLocaleString()}</div>
+          {carryOver > 0 && <div style={{ fontSize: 10, color: "#6366f1", marginLeft: 4 }}>+₱{carryOver.toLocaleString()} carry-over</div>}
         </div>
       </div>
 
-      {/* ── Bills ── */}
-      {billItems.length > 0 && (
-        <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 10, color: "#64748b", letterSpacing: 1.5, textTransform: "uppercase" }}>Bills & Gastos</span>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#f87171", fontWeight: 600 }}>−₱{billsTotal.toLocaleString()}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
-              <Row key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "#475569"} />
-            ))}
-            {extras.map((item, i) => (
-              <div key={`ex-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 8px 12px", borderLeft: "2px solid #f59e0b" }}>
-                <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>{item.label}</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#e2e8f0", marginRight: 10 }}>₱{item.amount.toLocaleString()}</span>
-                <button onClick={() => removeExtra(i)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 14, padding: "0 4px", lineHeight: 1 }}>×</button>
-              </div>
-            ))}
-          </div>
-
-          {/* Add misc form */}
-          {showAdd ? (
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-              <input
-                placeholder="Anong gastos? (e.g. Medicine)"
-                value={newLabel} onChange={e => setNewLabel(e.target.value)}
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }}
-              />
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  placeholder="Halaga (₱)"
-                  type="number" inputMode="decimal"
-                  value={newAmt} onChange={e => setNewAmt(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addExtra()}
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }}
-                />
-                <button onClick={addExtra} style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 8, padding: "8px 16px", color: "#fcd34d", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
-                <button onClick={() => { setShowAdd(false); setNewLabel(""); setNewAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <button onClick={() => setShowAdd(true)} style={{ marginTop: 10, background: "none", border: "1px dashed rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", color: "#475569", fontSize: 12, cursor: "pointer", width: "100%", textAlign: "left" }}>
-              + Add misc expense
-            </button>
-          )}
+      {/* ── Bills & Gastos ── */}
+      <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>
+          Bills & Gastos
         </div>
-      )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
+            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "#475569"} />
+          ))}
+          {extras.map((item, i) => (
+            <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} />
+          ))}
+        </div>
 
-      {/* ── Flex ── */}
+        {showAdd ? (
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            <input placeholder="Anong gastos? (e.g. Medicine)" value={newLabel} onChange={e => setNewLabel(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input placeholder="Halaga (₱)" type="number" inputMode="decimal" value={newAmt} onChange={e => setNewAmt(e.target.value)} onKeyDown={e => e.key === "Enter" && addExtra()}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
+              <button onClick={addExtra} style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 8, padding: "8px 16px", color: "#fcd34d", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
+              <button onClick={() => { setShowAdd(false); setNewLabel(""); setNewAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>✕</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAdd(true)} style={{ marginTop: 8, background: "none", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 8, padding: "7px 12px", color: "#475569", fontSize: 11, cursor: "pointer", width: "100%", textAlign: "left" }}>
+            + Add misc expense
+          </button>
+        )}
+
+        <SubtotalRow label="Matitira pagkatapos ng bills" value={afterBills} color={afterBills >= 0 ? "#cbd5e1" : "#fca5a5"} />
+      </div>
+
+      {/* ── Allowance ── */}
       {flexItems.length > 0 && (
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 10, color: "#64748b", letterSpacing: 1.5, textTransform: "uppercase" }}>Allowance</span>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#86efac", fontWeight: 600 }}>−₱{flexTotal.toLocaleString()}</span>
-          </div>
+          <div style={{ fontSize: 10, color: "#86efac", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Allowance</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {flexItems.map((item, i) => (
-              <Row key={i} label={item.label} amount={item.amount} accent="#22c55e" />
-            ))}
+            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" />)}
           </div>
+          <SubtotalRow label="Bago ilagay sa savings" value={afterFlex} color={afterFlex >= 0 ? "#cbd5e1" : "#fca5a5"} />
         </div>
       )}
 
       {/* ── Savings ── */}
       {savingsItems.length > 0 && (
-        <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(16,185,129,0.12)", background: "rgba(16,185,129,0.04)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 10, color: "#10b981", letterSpacing: 1.5, textTransform: "uppercase" }}>Itatabi (Savings)</span>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#6ee7b7", fontWeight: 600 }}>₱{savingsTotal.toLocaleString()}</span>
-          </div>
+        <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(16,185,129,0.15)", background: "rgba(16,185,129,0.04)" }}>
+          <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Itatabi — Savings</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {savingsItems.map((item, i) => (
-              <Row key={i} label={item.label} amount={item.amount} accent="#10b981" />
-            ))}
+            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#10b981" />)}
           </div>
         </div>
       )}
 
-      {/* ── Bottom: In Pocket ── */}
-      <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.07)",
-        background: inPocket >= 0 ? "rgba(16,185,129,0.05)" : "rgba(239,68,68,0.05)",
-        display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "#64748b" }}>Pocket money mo</span>
-        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 18,
-          color: inPocket >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 700 }}>
+      {/* ── Pocket Money: the ONE final number ── */}
+      <div style={{ padding: "16px 18px", borderTop: `1px solid ${inPocket >= 0 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
+        background: inPocket >= 0 ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)" }}>
+        <div style={{ fontSize: 9, color: inPocket >= 0 ? "#10b981" : "#ef4444", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
+          Pocket Money Mo — Pagkatapos ng Lahat
+        </div>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700,
+          color: inPocket >= 0 ? "#6ee7b7" : "#fca5a5" }}>
           ₱{inPocket.toLocaleString()}
-        </span>
+        </div>
+        <div style={{ fontSize: 10, color: "#475569", marginTop: 4 }}>
+          {Math.round((inPocket / available) * 100)}% ng iyong sahod na ₱{available.toLocaleString()}
+        </div>
       </div>
     </div>
   );
