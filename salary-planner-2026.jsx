@@ -307,7 +307,7 @@ function PBar({ value, max, color = "#14b8a6", animate = true, showPct = false }
         }} />
       </div>
       {showPct && (
-        <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 9, color, marginTop: 3, opacity: 0.75, fontFamily: "'DM Mono', monospace" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 9, color, marginTop: 3, opacity: 0.75, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
           {Math.round(pct)}%
         </div>
       )}
@@ -364,18 +364,19 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
 
   const ItemRow = ({ label, amount, accent, onDelete }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "7px 0 7px 10px", borderLeft: `2px solid ${accent}` }}>
-      <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>{label}</span>
-      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#cbd5e1" }}>₱{amount.toLocaleString()}</span>
-      {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "#3a5a80", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
+      padding: "9px 0 9px 12px", borderLeft: `2px solid ${accent}`,
+      borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+      <span style={{ fontSize: 13, color: "#8b9eb3", flex: 1, letterSpacing: "-0.005em" }}>{label}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: "#c8d5e8", fontWeight: 500 }}>₱{amount.toLocaleString()}</span>
+      {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "#2d4a6b", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
     </div>
   );
 
   const SubtotalRow = ({ label, value, color = "#94a3b8" }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "9px 0 4px", borderTop: "1px dashed rgba(56,189,248,0.1)", marginTop: 8 }}>
-      <span style={{ fontSize: 11, color: "#3a5a80" }}>{label}</span>
-      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color, fontWeight: 600 }}>₱{value.toLocaleString()}</span>
+      padding: "10px 0 2px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 6 }}>
+      <span style={{ fontSize: 10, color: "#2d4a6b", letterSpacing: "0.04em" }}>{label}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 14, color, fontWeight: 500, letterSpacing: "-0.01em" }}>₱{value.toLocaleString()}</span>
     </div>
   );
 
@@ -384,19 +385,19 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
 
       {/* ── Header: actual income only, no carry-over ── */}
       <div style={{ padding: "16px 18px 14px" }}>
-        <div style={{ fontSize: 9, color: "#3a5a80", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <div style={{ fontSize: 10, color: "#4d7099" }}>INCOME</div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 700 }}>₱{income.toLocaleString()}</div>
+        <div style={{ fontSize: 9, color: "#3a5a80", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>{title}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={{ fontSize: 9, color: "#3a5a80", letterSpacing: "0.07em", textTransform: "uppercase", fontWeight: 500 }}>Income</div>
+          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 500, letterSpacing: "-0.02em" }}>₱{income.toLocaleString()}</div>
         </div>
       </div>
 
       {/* ── Bills & Gastos ── */}
       <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.08)" }}>
-        <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>
+        <div style={{ fontSize: 9, color: "#f87171", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>
           Bills & Expenses
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
             <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "#3a5a80"} />
           ))}
@@ -411,7 +412,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
               style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }} />
             <div style={{ display: "flex", gap: 8 }}>
               <input placeholder="Amount (₱)" type="number" inputMode="decimal" value={newAmt} onChange={e => setNewAmt(e.target.value)} onKeyDown={e => e.key === "Enter" && addExtra()}
-                style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
+                style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
               <button onClick={addExtra} style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 8, padding: "8px 16px", color: "#fcd34d", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
               <button onClick={() => { setShowAdd(false); setNewLabel(""); setNewAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#4d7099", fontSize: 13, cursor: "pointer" }}>✕</button>
             </div>
@@ -428,8 +429,8 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       {/* ── Allowance ── */}
       {flexItems.length > 0 && (
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.08)" }}>
-          <div style={{ fontSize: 10, color: "#86efac", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Allowance</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ fontSize: 9, color: "#86efac", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Allowance</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" />)}
           </div>
           <SubtotalRow label="Before savings" value={afterFlex} color={afterFlex >= 0 ? "#cbd5e1" : "#fda4af"} />
@@ -439,8 +440,8 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       {/* ── Savings ── */}
       {savingsItems.length > 0 && (
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(20,184,166,0.15)", background: "rgba(20,184,166,0.04)" }}>
-          <div style={{ fontSize: 10, color: "#14b8a6", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Savings</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Savings</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" />)}
           </div>
         </div>
@@ -449,15 +450,15 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       {/* ── Pocket Money: the ONE final number ── */}
       <div style={{ padding: "16px 18px", borderTop: `1px solid ${inPocket >= 0 ? "rgba(20,184,166,0.2)" : "rgba(244,63,94,0.2)"}`,
         background: inPocket >= 0 ? "rgba(20,184,166,0.07)" : "rgba(244,63,94,0.07)" }}>
-        <div style={{ fontSize: 9, color: inPocket >= 0 ? "#14b8a6" : "#f43f5e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
+        <div style={{ fontSize: 9, color: inPocket >= 0 ? "#14b8a6" : "#f43f5e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, fontWeight: 500 }}>
           Pocket Money — After Everything
         </div>
-        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700,
-          color: inPocket >= 0 ? "#5eead4" : "#fda4af" }}>
+        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 28, fontWeight: 500,
+          letterSpacing: "-0.02em", color: inPocket >= 0 ? "#5eead4" : "#fda4af" }}>
           ₱{inPocket.toLocaleString()}
         </div>
-        <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 4 }}>
-          {Math.round((inPocket / income) * 100)}% of your ₱{income.toLocaleString()} income
+        <div style={{ fontSize: 10, color: "#2d4a6b", marginTop: 5 }}>
+          {Math.round((inPocket / income) * 100)}% of ₱{income.toLocaleString()} income
         </div>
       </div>
     </div>
@@ -772,23 +773,24 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "#080d1c", color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
+    <div style={{ minHeight: "100vh", background: "#080d1c", color: "#e2e8f0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #0f2040; border-radius: 99px; }
-        input, button { font-family: 'DM Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 99px; }
+        input, button { font-family: inherit; }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
         .btn { cursor: pointer; transition: all .15s; }
         .card-tap { cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-        .card-tap:active { background: rgba(59,130,246,0.05) !important; }
+        .card-tap:active { background: rgba(59,130,246,0.04) !important; }
         .task-row { cursor: pointer; transition: all 0.15s; }
         .task-row:active { opacity: 0.8; }
         .nav-btn { cursor: pointer; transition: color 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
         .nav-btn:active { opacity: 0.6; }
-        @keyframes fu { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        .fu { animation: fu .25s ease forwards; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        @keyframes fu { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .fu { animation: fu .22s ease forwards; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
         @keyframes toastIn { from{opacity:0;transform:translate(-50%,8px)} to{opacity:1;transform:translate(-50%,0)} }
       `}</style>
 
@@ -800,7 +802,7 @@ export default function App() {
           border: `1px solid ${toast.type === "error" ? "rgba(244,63,94,.45)" : "rgba(20,184,166,.45)"}`,
           borderRadius: 10, padding: "9px 20px", fontSize: 12,
           color: toast.type === "error" ? "#fda4af" : "#5eead4",
-          fontFamily: "'DM Mono', monospace", zIndex: 9999,
+          fontFamily: "'JetBrains Mono', ui-monospace, monospace", zIndex: 9999,
           animation: "toastIn .2s ease forwards", boxShadow: "0 4px 24px rgba(0,0,0,.6)", whiteSpace: "nowrap",
         }}>
           {toast.msg}
@@ -821,7 +823,7 @@ export default function App() {
                 <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.6 }}>
                   To enable cross-device sync, add these to your Vercel environment variables:
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 10, color: "#fcd34d", marginTop: 8, lineHeight: 1.8 }}>
+                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, color: "#fcd34d", marginTop: 8, lineHeight: 1.8 }}>
                   VITE_SUPABASE_URL<br/>VITE_SUPABASE_ANON_KEY
                 </div>
                 <div style={{ fontSize: 10, color: "#4d7099", marginTop: 8 }}>See the setup guide below.</div>
@@ -830,7 +832,7 @@ export default function App() {
 
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: "#4d7099", marginBottom: 8 }}>Your Sync ID (this device)</div>
-              <div style={{ fontFamily: "monospace", fontSize: 12, color: "#93c5fd", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "10px 12px", wordBreak: "break-all", marginBottom: 6 }}>{syncId}</div>
+              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#93c5fd", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "10px 12px", wordBreak: "break-all", marginBottom: 6 }}>{syncId}</div>
               <div style={{ fontSize: 10, color: "#3a5a80" }}>Copy this ID and enter it on your other device to sync.</div>
             </div>
 
@@ -838,7 +840,7 @@ export default function App() {
               <div style={{ fontSize: 11, color: "#4d7099", marginBottom: 8 }}>Load data from another device</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <input placeholder="Paste Sync ID here" value={syncIdInput} onChange={e => { setSyncIdInput(e.target.value); setSyncIdError(""); }}
-                  style={{ flex: 1, background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "#e2e8f0", outline: "none", fontFamily: "monospace" }} />
+                  style={{ flex: 1, background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "#e2e8f0", outline: "none", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
                 <button onClick={switchSyncId}
                   style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.4)", borderRadius: 8, padding: "9px 16px", color: "#93c5fd", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Load</button>
               </div>
@@ -863,14 +865,14 @@ export default function App() {
       {/* ── HEADER ── */}
       <div style={{ background: "linear-gradient(145deg, rgba(59,130,246,.1) 0%, rgba(20,184,166,.06) 100%)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "22px 18px 18px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          <div style={{ fontSize: 9, letterSpacing: 3, color: "#4d7099", textTransform: "uppercase", marginBottom: 4 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.1em", color: "#3a5a80", textTransform: "uppercase", marginBottom: 6 }}>
             Financial Recovery · 2026
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#f1f5f9", marginBottom: 2 }}>
+          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em", color: "#f1f5f9", marginBottom: 2 }}>
             Fin<span style={{ color: "#14b8a6" }}>Heal</span>
-            <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: "#4d7099", fontWeight: 400, marginLeft: 10 }}>Recover & Rebuild</span>
+            <span style={{ fontSize: 12, color: "#3a5a80", fontWeight: 400, marginLeft: 10, letterSpacing: 0 }}>Recover & Rebuild</span>
           </div>
-          <div style={{ fontSize: 11, color: "#4d7099", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: "#3a5a80", marginBottom: 14 }}>
             11–25 → paid 5th · 26–10 → paid 20th · US holidays · 8h/day
           </div>
 
@@ -878,7 +880,7 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
             <div style={{ background: "rgba(20,184,166,.09)", border: "1px solid rgba(20,184,166,.22)", borderRadius: 8, padding: "5px 11px", fontSize: 11 }}>
               <span style={{ color: "#4d7099" }}>FX </span>
-              <span style={{ fontFamily: "'DM Mono', monospace", color: "#5eead4", fontWeight: 600 }}>₱{LIVE_FX}</span>
+              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#5eead4", fontWeight: 600 }}>₱{LIVE_FX}</span>
               <span style={{ color: "#1e3a5f", fontSize: 9, marginLeft: 4 }}>May 18</span>
             </div>
             <button className="btn" onClick={() => setUseCustomFx(p => !p)} style={{
@@ -890,7 +892,7 @@ export default function App() {
             </button>
             {useCustomFx && (
               <input type="number" placeholder="e.g. 62.00" value={customFx} onChange={e => setCustomFx(e.target.value)}
-                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 8, padding: "5px 9px", fontSize: 12, color: "#fcd34d", width: 100, fontFamily: "'DM Mono', monospace" }} />
+                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 8, padding: "5px 9px", fontSize: 12, color: "#fcd34d", width: 100, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
             )}
           </div>
 
@@ -903,21 +905,21 @@ export default function App() {
               color: syncStatus === "synced" ? "#5eead4" : syncStatus === "error" || syncStatus === "unconfigured" ? "#fda4af" : "#93c5fd" }}>
               {syncStatus === "syncing" ? "⟳ Syncing…" : syncStatus === "synced" ? "✓ Cloud Synced" : syncStatus === "unconfigured" ? "☁ Setup Sync" : syncStatus === "error" ? "✗ Sync Error" : "☁ Cloud Sync"}
             </button>
-            <span style={{ fontSize: 9, color: "#1e3a5f", fontFamily: "monospace" }}>{syncId.slice(0, 8)}…</span>
+            <span style={{ fontSize: 9, color: "#1e3a5f", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{syncId.slice(0, 8)}…</span>
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
             {[
               { label: "Year Gross",   val: php(totalPhp),      sub: `${totalCycles} cycles`,       color: "#93c5fd" },
-              { label: "Confirmed",    val: php(confirmedPhp),  sub: `✦ ${confirmedCount} confirmed`, color: "#5eead4" },
-              { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} left`, color: "#fcd34d" },
+              { label: "Confirmed",    val: php(confirmedPhp),  sub: `${confirmedCount} confirmed`, color: "#5eead4" },
+              { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} remaining`, color: "#fcd34d" },
               { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#14b8a6" },
             ].map((s, i) => (
-              <div key={i} style={{ background: "rgba(10,20,45,0.8)", border: "1px solid rgba(56,189,248,0.1)", borderRadius: 10, padding: "9px 10px" }}>
-                <div style={{ fontSize: 8, color: "#4d7099", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s.label}</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: s.color, fontWeight: 600 }}>{s.val}</div>
-                <div style={{ fontSize: 9, color: "#3a5a80", marginTop: 1 }}>{s.sub}</div>
+              <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "11px 10px" }}>
+                <div style={{ fontSize: 9, color: "#3a5a80", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 5, fontWeight: 500 }}>{s.label}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: s.color, fontWeight: 500, letterSpacing: "-0.01em" }}>{s.val}</div>
+                <div style={{ fontSize: 9, color: "#2a4060", marginTop: 3 }}>{s.sub}</div>
               </div>
             ))}
           </div>
@@ -925,7 +927,7 @@ export default function App() {
           <div style={{ marginTop: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#1e3a5f", marginBottom: 5 }}>
               <span>Payslips confirmed</span>
-              <span style={{ fontFamily: "'DM Mono', monospace", color: "#3b82f6" }}>{confirmedCount}/{totalCycles}</span>
+              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#3b82f6" }}>{confirmedCount}/{totalCycles}</span>
             </div>
             <Bar pct={(confirmedCount / totalCycles) * 100} color="#3b82f6" h={4} />
           </div>
@@ -976,7 +978,7 @@ export default function App() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {isCollapsed && (
-                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: hasActual ? "#5eead4" : "#3a5a80" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, color: hasActual ? "#5eead4" : "#3a5a80" }}>
                             {php(totalGrpPhp)}
                           </span>
                         )}
@@ -1049,7 +1051,7 @@ export default function App() {
 
                                 {/* Amount row */}
                                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 600, color: d.isLocked ? "#93c5fd" : d.isActual ? "#5eead4" : isNext ? "#93c5fd" : "#4d7099" }}>
+                                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 18, fontWeight: 600, color: d.isLocked ? "#93c5fd" : d.isActual ? "#5eead4" : isNext ? "#93c5fd" : "#4d7099" }}>
                                     {php(d.php)}
                                   </div>
                                   <div style={{ fontSize: 10, color: "#4d7099" }}>
@@ -1064,11 +1066,11 @@ export default function App() {
                                   <div style={{ fontSize: 9, color: "#c4b5fd", letterSpacing: 1, marginBottom: 6 }}>MIXED BREAKDOWN</div>
                                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
                                     <span style={{ color: "#fcd34d" }}>5d MC @ $3.75 × 40h</span>
-                                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#fcd34d" }}>{php(cycle.mixedBreakdown.masterUSD * d.fxUsed)}</span>
+                                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#fcd34d" }}>{php(cycle.mixedBreakdown.masterUSD * d.fxUsed)}</span>
                                   </div>
                                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
                                     <span style={{ color: "#5eead4" }}>5d Client @ $5.50 × 40h</span>
-                                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#5eead4" }}>{php(cycle.mixedBreakdown.clientUSD * d.fxUsed)}</span>
+                                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#5eead4" }}>{php(cycle.mixedBreakdown.clientUSD * d.fxUsed)}</span>
                                   </div>
                                 </div>
                               )}
@@ -1126,12 +1128,12 @@ export default function App() {
                                             <div style={{ fontSize: 9, color: "#4d7099", marginBottom: 4 }}>{f.label}</div>
                                             <input type="number" placeholder={f.placeholder} value={editVal[f.key]}
                                               onChange={e => handleEditChange(f.key, e.target.value)}
-                                              style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                                              style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
                                           </div>
                                         ))}
                                         <div>
                                           <div style={{ fontSize: 9, color: "#4d7099", marginBottom: 4 }}>Auto USD</div>
-                                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#c4b5fd", padding: "7px 9px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(167,139,250,.2)", borderRadius: 7 }}>
+                                          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: "#c4b5fd", padding: "7px 9px", background: "rgba(255,255,255,.03)", border: "1px solid rgba(167,139,250,.2)", borderRadius: 7 }}>
                                             ${autoUSD || "0.00"}
                                           </div>
                                         </div>
@@ -1151,7 +1153,7 @@ export default function App() {
                                           <input type="number" placeholder={f.placeholder}
                                             value={f.key === "php" ? displayPhp : f.key === "usd" && isMixed && !editVal.usd ? autoUSD : editVal[f.key]}
                                             onChange={e => handleEditChange(f.key, e.target.value)}
-                                            style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'DM Mono', monospace" }} />
+                                            style={{ width: "100%", background: "rgba(255,255,255,.05)", border: `1px solid ${f.color}33`, borderRadius: 7, padding: "7px 9px", fontSize: 12, color: f.color, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
                                         </div>
                                       ))}
                                     </div>
@@ -1191,7 +1193,7 @@ export default function App() {
                   <div style={{ background: "rgba(255,255,255,.03)", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                     <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>{mo.label}</div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#93c5fd" }}>{php(mo.totalPhp)}</div>
+                      <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 14, color: "#93c5fd" }}>{php(mo.totalPhp)}</div>
                       <div style={{ fontSize: 9, color: "#4d7099" }}>{usd(mo.totalUsd)}</div>
                     </div>
                   </div>
@@ -1208,7 +1210,7 @@ export default function App() {
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: c.isLocked ? "#93c5fd" : c.isActual ? "#5eead4" : "#4d7099" }}>{php(c.php)}</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: c.isLocked ? "#93c5fd" : c.isActual ? "#5eead4" : "#4d7099" }}>{php(c.php)}</div>
                         <div style={{ fontSize: 9, color: "#4d7099" }}>@₱{c.fxUsed.toFixed(2)}</div>
                       </div>
                     </div>
@@ -1219,12 +1221,12 @@ export default function App() {
             <div style={{ background: "rgba(59,130,246,.07)", border: "1px solid rgba(59,130,246,.2)", borderRadius: 14, padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 9, color: "#3b82f6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>2026 Total Gross</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 22, color: "#93c5fd", fontWeight: 600 }}><AnimNum value={totalPhp} /></div>
+                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: "#93c5fd", fontWeight: 500, letterSpacing: "-0.02em" }}><AnimNum value={totalPhp} /></div>
                 <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 3 }}>{php(confirmedPhp)} confirmed · {php(estimatedPhp)} estimated</div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 9, color: "#3a5a80", marginBottom: 3 }}>avg per payout</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: "#3b82f6" }}>{php(totalPhp / totalCycles)}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, color: "#3b82f6" }}>{php(totalPhp / totalCycles)}</div>
               </div>
             </div>
           </div>
@@ -1246,7 +1248,7 @@ export default function App() {
                 ].map(({ label, cycle, data, income }) => (
                   <div key={label} style={{ background: "rgba(10,20,45,0.8)", borderRadius: 10, padding: "10px 12px" }}>
                     <div style={{ fontSize: 9, color: "#4d7099", marginBottom: 4 }}>{label} · Paid {cycle?.paidLabel || "—"}</div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: data?.isActual ? "#5eead4" : "#93c5fd", fontWeight: 600 }}>₱{income.toLocaleString()}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 17, color: data?.isActual ? "#5eead4" : "#93c5fd", fontWeight: 600 }}>₱{income.toLocaleString()}</div>
                     <div style={{ fontSize: 9, color: data?.isActual ? "#5eead4" : "#4d7099", marginTop: 3 }}>{data?.isActual ? "✓ actual" : "~ estimated"}</div>
                     {cycle && <div style={{ fontSize: 9, color: "#3a5a80", marginTop: 2 }}>{cycle.startStr} – {cycle.endStr}</div>}
                   </div>
@@ -1255,29 +1257,29 @@ export default function App() {
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4d7099", marginBottom: 5 }}>
                   <span>Combined</span>
-                  <span style={{ fontFamily: "'DM Mono', monospace", color: "#93c5fd" }}>₱{budgetMonthly.toLocaleString()}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#93c5fd" }}>₱{budgetMonthly.toLocaleString()}</span>
                 </div>
                 <Bar pct={100} color="#3b82f6" h={3} />
               </div>
             </div>
 
-            {/* Leak warning — bold hierarchy */}
-            <div style={{ background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.28)", borderRadius: 16, padding: "20px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#f43f5e", animation: "pulse 1.5s infinite" }} />
-                <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase" }}>⚠ Primary Leak Detected</div>
+            {/* Leak warning */}
+            <div style={{ background: "rgba(14,3,5,0.96)", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "inset 3px 0 0 rgba(185,28,28,0.55)", borderRadius: 14, padding: "20px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", flexShrink: 0, animation: "pulse 1.5s infinite" }} />
+                <div style={{ fontSize: 9, color: "#f87171", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500 }}>Primary Leak Detected</div>
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: "#fda4af", marginBottom: 4, lineHeight: 1.1 }}>
-                ₱10,000<span style={{ fontSize: 14, color: "#f87171", fontWeight: 600 }}>/month</span>
+              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em", color: "#fca5a5", marginBottom: 4, lineHeight: 1.1 }}>
+                ₱10,000<span style={{ fontSize: 14, color: "#ef4444", fontWeight: 400 }}>/month</span>
               </div>
-              <div style={{ fontSize: 11, color: "#4d7099", marginBottom: 6 }}>= GrabFood spending</div>
-              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: "#4d7099", marginBottom: 10 }}>GrabFood spending</div>
+              <div style={{ fontSize: 13, color: "#8b9eb3", lineHeight: 1.65, marginBottom: 16 }}>
                 That's{" "}
-                <span style={{ color: "#fda4af", fontWeight: 700 }}>{Math.round((10000 / budgetMonthly) * 100)}% of your ₱{budgetMonthly.toLocaleString()} income</span>
+                <span style={{ color: "#fca5a5", fontWeight: 500 }}>{Math.round((10000 / budgetMonthly) * 100)}% of your ₱{budgetMonthly.toLocaleString()} income</span>
                 {" "}before a single bill is paid.
               </div>
-              <PBar value={1600} max={budgetMonthly} color="#f43f5e" showPct />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4d7099", marginTop: 5 }}>
+              <PBar value={1600} max={budgetMonthly} color="#dc2626" showPct />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#3a5a80", marginTop: 6 }}>
                 <span>Budget cap ₱1,600</span><span>Income ₱{budgetMonthly.toLocaleString()}</span>
               </div>
             </div>
@@ -1287,12 +1289,12 @@ export default function App() {
               <div style={{ fontSize: 10, color: "#14b8a6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Savings Goal — 3-Month Target</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#5eead4", fontWeight: 600 }}>₱{BUDGET_DATA.savings.target.toLocaleString()}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 26, color: "#5eead4", fontWeight: 600 }}>₱{BUDGET_DATA.savings.target.toLocaleString()}</div>
                   <div style={{ fontSize: 12, color: "#4d7099", marginTop: 2 }}>{BUDGET_DATA.savings.label}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 10, color: "#4d7099" }}>Monthly</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: "#14b8a6" }}>₱{BUDGET_DATA.savings.monthly.toLocaleString()}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 17, color: "#14b8a6" }}>₱{BUDGET_DATA.savings.monthly.toLocaleString()}</div>
                   <div style={{ fontSize: 9, color: "#3a5a80", marginTop: 2 }}>{Math.round((BUDGET_DATA.savings.monthly / budgetMonthly) * 100)}% of income</div>
                 </div>
               </div>
@@ -1325,14 +1327,14 @@ export default function App() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>CC Installment Debt</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 24, color: "#fda4af", fontWeight: 700 }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 24, color: "#fda4af", fontWeight: 700 }}>
                     ₱{CC_LOANS.reduce((a, l) => a + l.remaining, 0).toLocaleString("en", { maximumFractionDigits: 0 })}
                   </div>
                   <div style={{ fontSize: 10, color: "#4d7099", marginTop: 2 }}>total remaining balance</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 10, color: "#4d7099", marginBottom: 2 }}>Monthly due</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: "#f87171", fontWeight: 600 }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 17, color: "#f87171", fontWeight: 600 }}>
                     ₱{CC_LOANS.reduce((a, l) => a + l.monthly, 0).toLocaleString("en", { maximumFractionDigits: 0 })}
                   </div>
                 </div>
@@ -1348,7 +1350,7 @@ export default function App() {
                         <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 1 }}>since {loan.since} · ₱{loan.purchased.toLocaleString()} original</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: loan.color, fontWeight: 600 }}>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 15, color: loan.color, fontWeight: 600 }}>
                           ₱{Math.round(loan.remaining).toLocaleString()}
                         </div>
                         <div style={{ fontSize: 10, color: "#4d7099", marginTop: 1 }}>₱{loan.monthly.toLocaleString("en", { maximumFractionDigits: 0 })}/mo</div>
@@ -1424,19 +1426,19 @@ export default function App() {
 
               {/* Hero: goal + progress */}
               <div style={{ background: "linear-gradient(145deg, rgba(20,184,166,0.1), rgba(59,130,246,0.08))", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 20, padding: "22px 18px" }}>
-                <div style={{ fontSize: 10, color: "#14b8a6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Savings Goal</div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 800, color: "#5eead4", marginBottom: 2 }}>₱1,000,000</div>
+                <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>Savings Goal</div>
+                <div style={{ fontSize: 32, fontWeight: 500, letterSpacing: "-0.025em", color: "#5eead4", marginBottom: 2 }}>₱1,000,000</div>
                 <div style={{ fontSize: 12, color: "#3a5a80", marginBottom: 18 }}>one million pesos</div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                   <div style={{ background: "rgba(12,24,52,0.9)", borderRadius: 12, padding: "12px 14px" }}>
                     <div style={{ fontSize: 10, color: "#4d7099", marginBottom: 4 }}>SAVED</div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#5eead4", fontWeight: 700 }}>₱{totalSaved.toLocaleString()}</div>
-                    <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 2 }}>{pct.toFixed(2)}% ng goal</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, color: "#5eead4", fontWeight: 700 }}>₱{totalSaved.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 2 }}>{pct.toFixed(2)}% of goal</div>
                   </div>
                   <div style={{ background: "rgba(12,24,52,0.9)", borderRadius: 12, padding: "12px 14px" }}>
                     <div style={{ fontSize: 10, color: "#4d7099", marginBottom: 4 }}>STILL NEED</div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#93c5fd", fontWeight: 700 }}>₱{remaining.toLocaleString()}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, color: "#93c5fd", fontWeight: 700 }}>₱{remaining.toLocaleString()}</div>
                     <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 2 }}>
                       {monthsLeft > 0
                         ? yearsLeft > 0
@@ -1475,7 +1477,7 @@ export default function App() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                           <span style={{ fontSize: 13, color: reached ? "#e2e8f0" : "#4d7099", fontWeight: reached ? 600 : 400 }}>{m.label}</span>
-                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: reached ? "#5eead4" : "#3a5a80" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, color: reached ? "#5eead4" : "#3a5a80" }}>
                             {reached ? "✓ Done" : `₱${m.amount.toLocaleString()}`}
                           </span>
                         </div>
@@ -1501,7 +1503,7 @@ export default function App() {
                       <input placeholder="Amount (₱)" type="number" inputMode="decimal"
                         value={newSavingsAmt} onChange={e => setNewSavingsAmt(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && addSavingsEntry()}
-                        style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
+                        style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.18)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
                       <button onClick={addSavingsEntry}
                         style={{ background: "rgba(20,184,166,0.18)", border: "1px solid rgba(20,184,166,0.4)", borderRadius: 8, padding: "10px 18px", color: "#5eead4", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
                       <button onClick={() => { setShowAddSavings(false); setNewSavingsLabel(""); setNewSavingsAmt(""); }}
@@ -1527,14 +1529,14 @@ export default function App() {
                         <div style={{ fontSize: 13, color: "#e2e8f0" }}>{entry.label}</div>
                         <div style={{ fontSize: 10, color: "#3a5a80", marginTop: 2 }}>{entry.date}</div>
                       </div>
-                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: "#5eead4", fontWeight: 600 }}>+₱{entry.amount.toLocaleString()}</div>
+                      <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 15, color: "#5eead4", fontWeight: 600 }}>+₱{entry.amount.toLocaleString()}</div>
                       <button onClick={() => deleteSavingsEntry(entry.id)}
                         style={{ background: "none", border: "none", color: "#3a5a80", cursor: "pointer", fontSize: 15, padding: "0 0 0 4px" }}>×</button>
                     </div>
                   ))}
                   <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.1)", background: "rgba(255,255,255,0.02)", display: "flex", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 12, color: "#4d7099" }}>{savingsLog.length} entries</span>
-                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#5eead4", fontWeight: 600 }}>₱{totalSaved.toLocaleString()} total</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 14, color: "#5eead4", fontWeight: 600 }}>₱{totalSaved.toLocaleString()} total</span>
                   </div>
                 </div>
               )}
@@ -1551,14 +1553,14 @@ export default function App() {
               {BUDGET_DATA.foodLimits.map((f, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i < BUDGET_DATA.foodLimits.length - 1 ? "1px solid rgba(56,189,248,0.08)" : "none" }}>
                   <div style={{ fontSize: 13, color: "#e2e8f0" }}>{f.label}</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: f.color, fontWeight: 600 }}>{f.daily}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 14, color: f.color, fontWeight: 600 }}>{f.daily}</div>
                 </div>
               ))}
             </div>
 
             <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 16, padding: "20px 18px" }}>
               <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Weekly Grocery Budget</div>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 32, color: "#86efac", fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 32, color: "#86efac", fontWeight: 600, marginBottom: 4 }}>
                 ₱875 <span style={{ fontSize: 14, color: "#4d7099" }}>/ week</span>
               </div>
               <div style={{ fontSize: 12, color: "#4d7099", marginBottom: 14 }}>₱3,500 per cutoff · covers 2 people</div>
@@ -1580,7 +1582,7 @@ export default function App() {
                     <div style={{ fontSize: 13, color: "#e2e8f0" }}>{name}</div>
                     <div style={{ fontSize: 11, color: "#4d7099" }}>{note}</div>
                   </div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#86efac" }}>{price}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#86efac" }}>{price}</div>
                 </div>
               ))}
             </div>
@@ -1632,7 +1634,7 @@ export default function App() {
             <div style={{ background: "rgba(10,20,45,0.8)", border: "1px solid rgba(56,189,248,0.1)", borderRadius: 12, padding: "14px 16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: "#4d7099" }}>
                 <span>Week {activeWeek} progress</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", color: "#93c5fd" }}>{weekTasks.filter(t => t.done).length}/{weekTasks.length}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#93c5fd" }}>{weekTasks.filter(t => t.done).length}/{weekTasks.length}</span>
               </div>
               <PBar value={weekTasks.filter(t => t.done).length} max={weekTasks.length || 1} color="#3b82f6" animate={false} showPct />
             </div>
@@ -1640,7 +1642,7 @@ export default function App() {
             <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 12, padding: "14px 16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 11, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase" }}>
                 <span>Overall 30-Day</span>
-                <span style={{ fontFamily: "'DM Mono', monospace" }}>{completedTasks}/{budgetTasks.length}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{completedTasks}/{budgetTasks.length}</span>
               </div>
               <PBar value={completedTasks} max={budgetTasks.length} color="#3b82f6" animate={false} showPct />
             </div>
@@ -1655,10 +1657,10 @@ export default function App() {
       {/* ── BOTTOM NAV ── */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(7,11,22,0.97)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(56,189,248,0.1)",
+        background: "rgba(6,9,18,0.98)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
         display: "flex",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}>
@@ -1667,26 +1669,24 @@ export default function App() {
           return (
             <button key={t.key} className="nav-btn" onClick={() => setTab(t.key)} style={{
               flex: 1, background: "none", border: "none", outline: "none",
-              padding: "10px 4px 8px",
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              color: isActive ? "#5eead4" : "#3a5a80",
+              padding: "11px 4px 9px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+              color: isActive ? "#5eead4" : "#2d4a6b",
               position: "relative",
             }}>
-              {/* Active indicator bar */}
               {isActive && (
                 <div style={{
-                  position: "absolute", top: 0, left: "20%", right: "20%", height: 2,
+                  position: "absolute", top: 0, left: "25%", right: "25%", height: 1,
                   background: "#14b8a6", borderRadius: "0 0 99px 99px",
-                  boxShadow: "0 0 8px #14b8a688",
+                  boxShadow: "0 0 10px #14b8a6aa",
                 }} />
               )}
               {t.icon}
-              <span style={{ fontSize: 9, letterSpacing: 0.3, fontWeight: isActive ? 600 : 400 }}>
+              <span style={{ fontSize: 9, letterSpacing: "0.04em", fontWeight: isActive ? 600 : 400 }}>
                 {t.label}
               </span>
-              {/* Tasks badge */}
               {t.key === "30-day plan" && completedTasks > 0 && (
-                <div style={{ position: "absolute", top: 6, right: "14%", background: "#3b82f6", borderRadius: 99, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#fff", padding: "0 3px" }}>
+                <div style={{ position: "absolute", top: 7, right: "15%", background: "#3b82f6", borderRadius: 99, minWidth: 13, height: 13, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#fff", padding: "0 3px" }}>
                   {completedTasks}
                 </div>
               )}
