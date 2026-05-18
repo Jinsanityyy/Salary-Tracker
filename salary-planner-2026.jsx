@@ -104,7 +104,7 @@ const BUDGET_DATA = {
   cutoff2: {
     budget: [
       { label: "Electricity + Water", amount: 2000, type: "fixed" },
-      { label: "Credit Card",         amount: 8950, type: "debt" },
+      { label: "Credit-To-Cash 5",     amount: 8923,  type: "debt" },
       { label: "Food / Misc",         amount: 2500, type: "variable" },
       { label: "Personal Allowance",  amount: 1000, type: "flex" },
       { label: "Savings Transfer",    amount: 3000, type: "savings" },
@@ -112,6 +112,7 @@ const BUDGET_DATA = {
   },
   savings: { monthly: 6500, target: 19500, label: "1-Month Emergency Fund", months: 3 },
   carryOver: 10000,
+  ccTotal: 8923,
   foodLimits: [
     { label: "Cook at home",          daily: "₱150–200",   color: "#22c55e" },
     { label: "Tindahan / Carinderia", daily: "₱250–300",   color: "#84cc16" },
@@ -136,6 +137,10 @@ const BUDGET_DATA = {
     { week: 4, label: "Reward: one GrabFood order (₱400 max)",        done: false },
   ],
 };
+
+const CC_LOANS = [
+  { name: "Credit-To-Cash 5", since: "May '12", purchased: 100000, remaining: 62463.62, monthly: 8922.76, color: "#fb923c" },
+];
 
 const TYPE_COLORS = {
   fixed:    { bg: "rgba(99,102,241,0.15)",  border: "#6366f1", text: "#a5b4fc" },
@@ -1060,18 +1065,49 @@ export default function App() {
               income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
             />
 
-            {/* CC Strategy */}
-            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)", borderRadius: 16, padding: "18px" }}>
-              <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Credit Card Strategy</div>
-              {[
-                "🚫 Do NOT use the card for new purchases",
-                "✅ Pay ₱8,950 every C2 — full amount, on time",
-                "➕ Add ₱500–1,000 extra when possible to cut interest",
-                "🔄 Ask about 0% installment restructuring",
-                "💸 If interest > 3%/mo, explore BDO/BPI/Tonik personal loan",
-              ].map((s, i) => (
-                <div key={i} style={{ fontSize: 13, color: "#94a3b8", padding: "8px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.5 }}>{s}</div>
-              ))}
+            {/* CC Debt Breakdown */}
+            <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.22)", borderRadius: 16, padding: "18px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>CC Installment Debt</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 24, color: "#fca5a5", fontWeight: 700 }}>
+                    ₱{CC_LOANS.reduce((a, l) => a + l.remaining, 0).toLocaleString("en", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>total remaining balance</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10, color: "#64748b", marginBottom: 2 }}>Monthly due</div>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 17, color: "#f87171", fontWeight: 600 }}>
+                    ₱{CC_LOANS.reduce((a, l) => a + l.monthly, 0).toLocaleString("en", { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              </div>
+
+              {CC_LOANS.map((loan, i) => {
+                const paidPct = Math.round(((loan.purchased - loan.remaining) / loan.purchased) * 100);
+                return (
+                  <div key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 14, marginTop: i > 0 ? 14 : 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500 }}>{loan.name}</div>
+                        <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>since {loan.since} · ₱{loan.purchased.toLocaleString()} original</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: loan.color, fontWeight: 600 }}>
+                          ₱{Math.round(loan.remaining).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 1 }}>₱{loan.monthly.toLocaleString("en", { maximumFractionDigits: 0 })}/mo</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${paidPct}%`, background: loan.color, borderRadius: 99, boxShadow: `0 0 8px ${loan.color}88`, transition: "width 1.2s ease" }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#64748b", whiteSpace: "nowrap" }}>{paidPct}% paid</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* 3 Rules */}
