@@ -212,6 +212,81 @@ const THEMES = {
   },
 };
 
+// ─── Palengke Guide Data ──────────────────────────────────────────────────────
+const PALENGKE_BUDGET = 2000;
+const PALENGKE_SECTIONS = [
+  {
+    id: "basics", icon: "🌾", label: "Bigas & Basics",
+    color: "#a3e635", bg: "rgba(163,230,53,0.08)", border: "rgba(163,230,53,0.25)",
+    items: [
+      { name: "Bigas (sinandomeng/dinorado)", qty: "5kg",    price: 270, tip: "Bumili sa sako para mas mura" },
+      { name: "Canola oil",                  qty: "500ml",   price: 90,  tip: "Mas healthy kaysa vegetable oil" },
+      { name: "Toyo, suka, patis",           qty: "set",     price: 70,  tip: "Goya o Datu Puti" },
+      { name: "Bawang, sibuyas, luya",       qty: "bundle",  price: 50,  tip: "Laging mahalaga sa lutuin" },
+      { name: "Asin, paminta, bay leaf",     qty: "set",     price: 30,  tip: "Pantaon" },
+    ],
+  },
+  {
+    id: "protein", icon: "🥩", label: "Proteins",
+    color: "#f97316", bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.25)",
+    items: [
+      { name: "Chicken breast (skinless)", qty: "1kg",       price: 200, tip: "Pinaka-lean na protein — tinola, grilled, o stir-fry" },
+      { name: "Bangus (fresh, Dagupan)",   qty: "2 pcs",     price: 160, tip: "Common sa Baguio palengke — sinigang, inihaw, o prito" },
+      { name: "Galunggong (fresh)",        qty: "1kg",       price: 140, tip: "Palinisin na sa tindera! Paukit-ukit pa para ready to fry" },
+      { name: "Pusit / squid",             qty: "½kg",       price: 110, tip: "Adobo o grilled — mabilis maluto, masustansya" },
+      { name: "Hipon (medium, fresh)",     qty: "½kg",       price: 160, tip: "Sauté with bawang o tinola variant" },
+      { name: "Itlog (large)",             qty: "1 tray(30)",price: 195, tip: "₱6.50 each — pinaka-tipid na protein, laging pwede" },
+      { name: "Canned tuna (in water)",    qty: "4 cans",    price: 100, tip: "Sa tubig mas healthy kaysa sa oil — emergency ulam" },
+    ],
+  },
+  {
+    id: "veggies", icon: "🥦", label: "Gulay",
+    color: "#22c55e", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.25)",
+    items: [
+      { name: "Broccoli",                    qty: "1 head",  price: 60,  tip: "Baguio-grown! Mas fresh at mas mura dito" },
+      { name: "Sayote",                      qty: "4 pcs",   price: 30,  tip: "Local produce ng Benguet — low calorie, mabubusog" },
+      { name: "Talbos ng sayote",            qty: "2 bundles",price: 20, tip: "Iron-rich, for tinola" },
+      { name: "Snow peas / chicharo",        qty: "¼kg",     price: 40,  tip: "High protein sa gulay, stir-fry" },
+      { name: "Kangkong / pechay",           qty: "3 bundles",price: 40, tip: "Iron-rich, mura, mabilis maluto" },
+      { name: "Sitaw (string beans)",        qty: "2 bundles",price: 40, tip: "High fiber, pwede sa adobo o ginisa" },
+      { name: "Kamatis",                     qty: "¼kg",     price: 25,  tip: "Sawsaw sa pritong isda" },
+      { name: "Talong",                      qty: "3 pcs",   price: 30,  tip: "Grilled talong = super healthy at masarap" },
+      { name: "Ampalaya",                    qty: "2 pcs",   price: 30,  tip: "Blood sugar regulator — ginisa with egg" },
+    ],
+  },
+  {
+    id: "baguio", icon: "🏔️", label: "Baguio Specials",
+    color: "#f472b6", bg: "rgba(244,114,182,0.08)", border: "rgba(244,114,182,0.25)",
+    items: [
+      { name: "Strawberries (La Trinidad)", qty: "½kg",   price: 80, tip: "Bumili sa likod ng market — mas mura, less tourist markup" },
+      { name: "Kamote / sweet potato",      qty: "1kg",   price: 50, tip: "Locally grown! Better carbs kaysa white rice" },
+      { name: "Malunggay (moringa)",        qty: "2 bundles",price: 20, tip: "Supernutrient — iron, calcium, vitamins. Libre kung may kapitbahay!" },
+      { name: "Pechay Baguio",             qty: "1 head", price: 35, tip: "Mas malaking dahon, mas matamis — unique sa Baguio" },
+      { name: "Kalamansi",                 qty: "¼kg",   price: 25, tip: "Vitamin C, pampaganda ng luto at sawsaw" },
+      { name: "Luya (extra)",              qty: "100g",   price: 15, tip: "Anti-inflammatory — dagdag sa tinola at sinigang" },
+    ],
+  },
+];
+const PALENGKE_MEALS = [
+  { day: "Lunes",      am: "Itlog + kamote",                   pm: "Chicken tinola + talbos ng sayote",   gabi: "Grilled bangus + ensaladang kamatis" },
+  { day: "Martes",     am: "Scrambled eggs + kalamansi juice", pm: "Tinola leftover + chicharo",          gabi: "Adobong pusit + rice" },
+  { day: "Miyerkules", am: "Kamote + boiled egg",              pm: "Pritong galunggong + kamatis",        gabi: "Ginisang broccoli + chicken breast" },
+  { day: "Huwebes",    am: "Itlog + saging",                   pm: "Sinigang na bangus + kangkong",       gabi: "Sautéed hipon + sitaw" },
+  { day: "Biyernes",   am: "Tuna + kamatis on rice",           pm: "Stir-fry chicharo + chicken",        gabi: "Grilled galunggong + pechay Baguio soup" },
+  { day: "Sabado",     am: "Strawberry + itlog",               pm: "Chicken breast salad + kamote",       gabi: "Ginisang pusit + ampalaya" },
+  { day: "Linggo",     am: "Omelet + kamatis",                 pm: "Tinolang manok (fresh batch)",        gabi: "Inihaw na bangus + ensalada" },
+];
+const PALENGKE_TIPS = [
+  { icon: "⏰", title: "Pumunta 6–8am",           body: "Mas fresh ang lahat, mas mura pa. Sa Baguio lalo — maaga pa lang maraming tao na." },
+  { icon: "🏔️", title: "Pumunta sa likod ng market", body: "Ang gulay section sa likod ay mas mura at hindi masyadong siksikan — doon ang locals bumibili." },
+  { icon: "💬", title: "Tumawad lagi",             body: '"Paki-dagdag na po" o bulk purchase = may libre laging kasama.' },
+  { icon: "🐟", title: "Palinisin ang galunggong", body: 'Sabihing "palinisin na po" at "paukit-ukit" — libre yan, ready to cook na pauwi mo.' },
+  { icon: "🍓", title: "Strawberries sa La Trinidad", body: "Kung may oras — pumunta sa La Trinidad mismo. Mas mura kaysa sa loob ng Baguio market." },
+  { icon: "🌿", title: "Malunggay is free",        body: "Pag may kapitbahay na puno — humingi lang. Supernutrient ito, libre pa." },
+  { icon: "🥚", title: "Itlog muna kapag badtrip", body: "₱6.50 lang isang itlog, complete protein na. Hindi ka magugutom kahit anong mangyari." },
+  { icon: "💧", title: "Steam > fry para sa gulay", body: "Mas maraming nutrients ang nananatili. Baguio gulay masarap kahit plain steamed lang." },
+];
+
 // ─── Bottom Nav Config ────────────────────────────────────────────────────────
 const NAV_TABS = [
   {
@@ -269,6 +344,16 @@ const NAV_TABS = [
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 11l3 3L22 4"/>
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    ),
+  },
+  {
+    key: "palengke", label: "Palengke",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 0 1-8 0"/>
       </svg>
     ),
   },
@@ -556,6 +641,10 @@ export default function App() {
     } catch { return BUDGET_DATA.tasks; }
   });
   const [activeWeek, setActiveWeek] = useState(1);
+  const [palengkeSection, setPalengkeSection] = useState("basics");
+  const [palengkeTab, setPalengkeTab]         = useState("shopping");
+  const [palengkeChecked, setPalengkeChecked] = useState({});
+  const togglePalengke = (id) => setPalengkeChecked(p => ({ ...p, [id]: !p[id] }));
 
   const [budgetFirstExtras, setBudgetFirstExtras] = useState(() => {
     try { return JSON.parse(localStorage.getItem("extra_expenses_budget-first") || "[]"); }
@@ -1814,6 +1903,188 @@ export default function App() {
             </button>
           </div>
         )}
+        {/* ════ PALENGKE GUIDE ════ */}
+        {tab === "palengke" && (() => {
+          const pTotal      = PALENGKE_SECTIONS.reduce((s, sec) => s + sec.items.reduce((a, i) => a + i.price, 0), 0);
+          const pRemaining  = PALENGKE_BUDGET - pTotal;
+          const pCheckedAmt = PALENGKE_SECTIONS.reduce((s, sec) => s + sec.items.filter(i => palengkeChecked[`${sec.id}-${i.name}`]).reduce((a, i) => a + i.price, 0), 0);
+          const activeData  = PALENGKE_SECTIONS.find(s => s.id === palengkeSection);
+
+          return (
+            <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Budget meter */}
+              <div style={{ background: "var(--card)", border: "1px solid rgba(163,230,53,0.15)", borderRadius: 16, padding: "16px" }}>
+                <div style={{ fontSize: 9, color: "#4a7c59", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>🏔️ Baguio Palengke · 2 pax · No Pork</div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 2 }}>Est. Total</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: "#a3e635" }}>₱{pTotal.toLocaleString()}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 2 }}>Budget / Natitira</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: pRemaining >= 0 ? "var(--grn)" : "var(--rose)" }}>
+                      ₱{PALENGKE_BUDGET} / <span style={{ fontSize: 15 }}>+₱{pRemaining}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ height: 5, background: "var(--bdr)", borderRadius: 99, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min((pTotal / PALENGKE_BUDGET) * 100, 100)}%`, background: "linear-gradient(90deg,#22c55e,#a3e635)", borderRadius: 99 }} />
+                </div>
+                {pCheckedAmt > 0 && (
+                  <div style={{ marginTop: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "8px 12px", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: "#86efac" }}>🛒 Cart total</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: "#22c55e" }}>₱{pCheckedAmt.toLocaleString()} / ₱{PALENGKE_BUDGET}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Sub-tabs */}
+              <div style={{ display: "flex", gap: 6 }}>
+                {[["shopping","🛒 List"],["meals","🍽 Meal Plan"],["tips","💡 Tips"]].map(([k, lbl]) => (
+                  <button key={k} className="btn" onClick={() => setPalengkeTab(k)} style={{
+                    background: palengkeTab === k ? "rgba(163,230,53,0.12)" : "transparent",
+                    border: `1px solid ${palengkeTab === k ? "rgba(163,230,53,0.4)" : "var(--bdr)"}`,
+                    borderRadius: 99, padding: "6px 14px", fontSize: 11,
+                    color: palengkeTab === k ? "#a3e635" : "var(--fg4)", whiteSpace: "nowrap",
+                  }}>{lbl}</button>
+                ))}
+              </div>
+
+              {/* ── Shopping List ── */}
+              {palengkeTab === "shopping" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {PALENGKE_SECTIONS.map(s => (
+                      <button key={s.id} className="btn" onClick={() => setPalengkeSection(s.id)} style={{
+                        background: palengkeSection === s.id ? s.bg : "transparent",
+                        border: `1px solid ${palengkeSection === s.id ? s.border : "var(--bdr)"}`,
+                        borderRadius: 99, padding: "5px 12px", fontSize: 11,
+                        color: palengkeSection === s.id ? s.color : "var(--fg4)",
+                      }}>{s.icon} {s.label}</button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 2px" }}>
+                    <div style={{ fontSize: 13, color: "var(--fg)", fontWeight: 500 }}>{activeData.icon} {activeData.label}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: activeData.color }}>₱{activeData.items.reduce((a,i) => a+i.price,0)}</div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {activeData.items.map((item, i) => {
+                      const ck = `${activeData.id}-${item.name}`;
+                      const done = palengkeChecked[ck];
+                      return (
+                        <div key={i} onClick={() => togglePalengke(ck)} style={{
+                          background: done ? "rgba(34,197,94,0.06)" : "var(--surface)",
+                          border: `1px solid ${done ? "rgba(34,197,94,0.2)" : "var(--bdr)"}`,
+                          borderRadius: 12, padding: "11px 14px", cursor: "pointer",
+                          display: "grid", gridTemplateColumns: "22px 1fr auto", gap: 12, alignItems: "center",
+                        }}>
+                          <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                            background: done ? "#22c55e" : "transparent",
+                            border: `2px solid ${done ? "#22c55e" : "var(--fg4)"}`,
+                            display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {done && <span style={{ color: "#fff", fontSize: 10, fontWeight: 700 }}>✓</span>}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, color: done ? "var(--fg4)" : "var(--fg)", textDecoration: done ? "line-through" : "none", marginBottom: 3 }}>
+                              {item.name} <span style={{ fontSize: 10, color: "var(--fg4)" }}>{item.qty}</span>
+                            </div>
+                            <div style={{ fontSize: 10, color: "var(--fg4)", fontStyle: "italic" }}>💡 {item.tip}</div>
+                          </div>
+                          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: done ? "var(--fg4)" : activeData.color, textAlign: "right", flexShrink: 0 }}>₱{item.price}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {palengkeSection === "protein" && (
+                    <div style={{ background: "rgba(249,115,22,0.07)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 12, padding: "13px 15px" }}>
+                      <div style={{ fontSize: 11, color: "#fb923c", fontWeight: 600, marginBottom: 8 }}>🐟 Pag bumili ng Galunggong — sabihin:</div>
+                      {[
+                        { phrase: '"Palinisin na po"',  desc: "Aalisin ang kaliskis, laman-loob, at hasang — libre" },
+                        { phrase: '"Paukit-ukit pa po"', desc: "Hahiwain para mas mabilis maluto at mas masarap marinahan" },
+                      ].map((p, i) => (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 10, alignItems: "start", marginTop: i > 0 ? 8 : 0 }}>
+                          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, color: "var(--amr)", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap" }}>{p.phrase}</span>
+                          <span style={{ fontSize: 11, color: "var(--fg3)", paddingTop: 2 }}>{p.desc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Full summary */}
+                  <div style={{ background: "var(--card)", border: "1px solid var(--bdr)", borderRadius: 14, overflow: "hidden" }}>
+                    <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--bdr)", fontSize: 9, color: "var(--fg4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Full Summary</div>
+                    {PALENGKE_SECTIONS.map((s, i) => {
+                      const sTotal = s.items.reduce((a, it) => a + it.price, 0);
+                      return (
+                        <div key={s.id} onClick={() => setPalengkeSection(s.id)} style={{
+                          padding: "10px 16px", cursor: "pointer",
+                          borderBottom: i < PALENGKE_SECTIONS.length - 1 ? "1px solid var(--bdr-sub)" : "none",
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          background: palengkeSection === s.id ? s.bg : "transparent",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 14 }}>{s.icon}</span>
+                            <span style={{ fontSize: 12, color: palengkeSection === s.id ? s.color : "var(--fg3)" }}>{s.label}</span>
+                          </div>
+                          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 12, color: s.color }}>₱{sTotal}</div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ padding: "12px 16px", background: "rgba(163,230,53,0.06)", borderTop: "1px solid rgba(163,230,53,0.15)", display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 12, color: "#a3e635", fontWeight: 600 }}>TOTAL</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 14, color: "#a3e635" }}>₱{pTotal} <span style={{ fontSize: 11, color: "var(--fg4)" }}>/ ₱{PALENGKE_BUDGET} budget</span></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Meal Plan ── */}
+              {palengkeTab === "meals" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                  <div style={{ fontSize: 11, color: "var(--fg4)", marginBottom: 4 }}>7-day plan · 2 pax · No pork · Baguio ingredients</div>
+                  {PALENGKE_MEALS.map((m, i) => (
+                    <div key={i} style={{ background: "var(--card)", border: "1px solid var(--bdr)", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ background: "rgba(163,230,53,0.06)", padding: "8px 15px", borderBottom: "1px solid var(--bdr-sub)" }}>
+                        <div style={{ fontSize: 13, color: "#a3e635", fontWeight: 600 }}>{m.day}</div>
+                      </div>
+                      {[["🌅 Almusal", m.am], ["☀️ Tanghalian", m.pm], ["🌙 Hapunan", m.gabi]].map(([label, val], ri) => (
+                        <div key={ri} style={{ display: "grid", gridTemplateColumns: "100px 1fr", padding: "9px 15px", borderBottom: ri < 2 ? "1px solid var(--bdr-sub)" : "none" }}>
+                          <div style={{ fontSize: 10, color: "var(--fg4)" }}>{label}</div>
+                          <div style={{ fontSize: 12, color: "var(--fg2)" }}>{val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  <div style={{ background: "rgba(167,139,250,0.07)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 12, padding: "14px 16px" }}>
+                    <div style={{ fontSize: 12, color: "var(--prp)", fontWeight: 600, marginBottom: 6 }}>💜 Nutrition Focus</div>
+                    <div style={{ fontSize: 11, color: "var(--fg3)", lineHeight: 1.7 }}>
+                      High protein (chicken, galunggong, pusit, hipon, itlog) · Omega-3 (bangus, galunggong) · Anti-inflammatory (luya, bawang, ampalaya) · Iron (kangkong, malunggay, chicharo) · Baguio superfoods (strawberries, sayote, pechay Baguio)
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Tips ── */}
+              {palengkeTab === "tips" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {PALENGKE_TIPS.map((t, i) => (
+                    <div key={i} style={{ background: "var(--card)", border: "1px solid var(--bdr)", borderRadius: 14, padding: "15px 16px", display: "grid", gridTemplateColumns: "32px 1fr", gap: 12 }}>
+                      <div style={{ fontSize: 22, lineHeight: 1 }}>{t.icon}</div>
+                      <div>
+                        <div style={{ fontSize: 13, color: "#a3e635", fontWeight: 600, marginBottom: 4 }}>{t.title}</div>
+                        <div style={{ fontSize: 12, color: "var(--fg3)", lineHeight: 1.6 }}>{t.body}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── BOTTOM NAV ── */}
