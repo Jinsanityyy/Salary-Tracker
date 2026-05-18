@@ -204,7 +204,7 @@ export default function App() {
   const [toast, setToast]           = useState(null);
   const [uploadingKey, setUploadingKey] = useState(null);
   const [uploadErrors, setUploadErrors] = useState({});
-  const [apiKey, setApiKey]         = useState("");
+  const [apiKey, setApiKey]         = useState(import.meta.env.VITE_GOOGLE_AI_KEY || "");
   const [showApiKey, setShowApiKey] = useState(false);
   const fileInputRef                = useRef(null);
   const uploadTargetRef             = useRef(null);
