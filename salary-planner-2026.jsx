@@ -313,8 +313,31 @@ function Chevron({ open }) {
   );
 }
 
-function CutoffCard({ title, income, items, carryOver }) {
-  const billItems    = items.filter(i => ["fixed", "debt", "variable"].includes(i.type));
+function CutoffCard({ title, income, items, carryOver, cardKey }) {
+  const [extras, setExtras] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`extra_expenses_${cardKey}`) || "[]"); }
+    catch { return []; }
+  });
+  const [showAdd, setShowAdd]   = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newAmt, setNewAmt]     = useState("");
+
+  function addExtra() {
+    const amt = parseFloat(newAmt);
+    if (!newLabel.trim() || !amt || amt <= 0) return;
+    const updated = [...extras, { label: newLabel.trim(), amount: amt }];
+    setExtras(updated);
+    localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
+    setNewLabel(""); setNewAmt(""); setShowAdd(false);
+  }
+  function removeExtra(i) {
+    const updated = extras.filter((_, idx) => idx !== i);
+    setExtras(updated);
+    localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
+  }
+
+  const allBillItems = [...items.filter(i => ["fixed", "debt", "variable"].includes(i.type)), ...extras];
+  const billItems    = allBillItems;
   const flexItems    = items.filter(i => i.type === "flex");
   const savingsItems = items.filter(i => i.type === "savings");
 
@@ -378,10 +401,43 @@ function CutoffCard({ title, income, items, carryOver }) {
             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#f87171", fontWeight: 600 }}>−₱{billsTotal.toLocaleString()}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {billItems.map((item, i) => (
+            {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
               <Row key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "#475569"} />
             ))}
+            {extras.map((item, i) => (
+              <div key={`ex-${i}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 8px 12px", borderLeft: "2px solid #f59e0b" }}>
+                <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>{item.label}</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "#e2e8f0", marginRight: 10 }}>₱{item.amount.toLocaleString()}</span>
+                <button onClick={() => removeExtra(i)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 14, padding: "0 4px", lineHeight: 1 }}>×</button>
+              </div>
+            ))}
           </div>
+
+          {/* Add misc form */}
+          {showAdd ? (
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              <input
+                placeholder="Anong gastos? (e.g. Medicine)"
+                value={newLabel} onChange={e => setNewLabel(e.target.value)}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  placeholder="Halaga (₱)"
+                  type="number" inputMode="decimal"
+                  value={newAmt} onChange={e => setNewAmt(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && addExtra()}
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }}
+                />
+                <button onClick={addExtra} style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 8, padding: "8px 16px", color: "#fcd34d", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
+                <button onClick={() => { setShowAdd(false); setNewLabel(""); setNewAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowAdd(true)} style={{ marginTop: 10, background: "none", border: "1px dashed rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", color: "#475569", fontSize: 12, cursor: "pointer", width: "100%", textAlign: "left" }}>
+              + Add misc expense
+            </button>
+          )}
         </div>
       )}
 
@@ -1111,6 +1167,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
               income={budgetFirstIncome} items={firstItems} carryOver={null}
+              cardKey="budget-first"
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
@@ -1120,6 +1177,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
               income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
+              cardKey="budget-second"
             />
 
             {/* CC Debt Breakdown */}
