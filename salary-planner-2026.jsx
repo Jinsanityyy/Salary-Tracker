@@ -489,6 +489,18 @@ export default function App() {
   });
   const maxMonthPhp = Math.max(...Object.values(byMonth).map(m => m.totalPhp));
 
+  // Dynamic budget: pull income from next two upcoming pay cycles
+  const upcomingCycles  = ALL_CYCLES.filter(c => c.paidDate >= TODAY);
+  const budgetC1Cycle   = upcomingCycles[0] || null;
+  const budgetC2Cycle   = upcomingCycles[1] || null;
+  const budgetC1Data    = budgetC1Cycle ? getCycleData(budgetC1Cycle) : null;
+  const budgetC2Data    = budgetC2Cycle ? getCycleData(budgetC2Cycle) : null;
+  const budgetC1        = Math.round(budgetC1Data?.php ?? BUDGET_DATA.income.c1);
+  const budgetC2        = Math.round(budgetC2Data?.php ?? BUDGET_DATA.income.c2);
+  const budgetMonthly   = budgetC1 + budgetC2;
+  const c1TotalSpend    = BUDGET_DATA.cutoff1.budget.reduce((a, b) => a + b.amount, 0);
+  const dynamicCarryOver = Math.max(0, budgetC1 - c1TotalSpend);
+
   // Budget task counts
   const completedTasks = budgetTasks.filter(t => t.done).length;
   const weekTasks = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
@@ -918,6 +930,44 @@ export default function App() {
         {tab === "budget" && (
           <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+            {/* Payslip source info */}
+            <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)",
+              borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>
+                Income from Payslip Tracker
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { label: "C1", cycle: budgetC1Cycle, data: budgetC1Data, income: budgetC1 },
+                  { label: "C2", cycle: budgetC2Cycle, data: budgetC2Data, income: budgetC2 },
+                ].map(({ label, cycle, data, income }) => (
+                  <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, color: "#475569", marginBottom: 4 }}>
+                      {label} · Paid {cycle?.paidLabel || "—"}
+                    </div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: data?.isActual ? "#6ee7b7" : "#a5b4fc", fontWeight: 600 }}>
+                      ₱{income.toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: 9, color: data?.isActual ? "#6ee7b7" : "#475569", marginTop: 3 }}>
+                      {data?.isActual ? "✓ actual payslip" : "~ estimated"}
+                    </div>
+                    {cycle && (
+                      <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>
+                        {cycle.startStr} – {cycle.endStr}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#475569", marginBottom: 5 }}>
+                  <span>Combined payout</span>
+                  <span style={{ fontFamily: "'DM Mono', monospace", color: "#a5b4fc" }}>₱{budgetMonthly.toLocaleString()}</span>
+                </div>
+                <PBar value={budgetMonthly} max={budgetMonthly} color="#6366f1" animate={false} />
+              </div>
+            </div>
+
             {/* Leak Warning */}
             <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
               borderRadius: 16, padding: "18px 20px" }}>
@@ -929,11 +979,15 @@ export default function App() {
                 GrabFood = ₱10,000/month gone
               </div>
               <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginBottom: 12 }}>
-                ₱1,000/day × 10 days = savings potential wiped out. This single habit is the difference between saving ₱6,500/month or saving ₱0.
+                ₱1,000/day × 10 days = savings potential wiped out. That's{" "}
+                <span style={{ color: "#fca5a5", fontWeight: 600 }}>
+                  {Math.round((10000 / budgetMonthly) * 100)}% of your ₱{budgetMonthly.toLocaleString()} income
+                </span>{" "}
+                gone before bills.
               </div>
-              <PBar value={1600} max={10000} color="#ef4444" />
+              <PBar value={1600} max={budgetMonthly} color="#ef4444" />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginTop: 5 }}>
-                <span>Budget cap ₱1,600</span><span>Danger zone ₱10,000</span>
+                <span>Budget cap ₱1,600</span><span>Income ₱{budgetMonthly.toLocaleString()}</span>
               </div>
             </div>
 
@@ -955,6 +1009,9 @@ export default function App() {
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, color: "#10b981" }}>
                     ₱{BUDGET_DATA.savings.monthly.toLocaleString()}
                   </div>
+                  <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>
+                    {Math.round((BUDGET_DATA.savings.monthly / budgetMonthly) * 100)}% of income
+                  </div>
                 </div>
               </div>
               <PBar value={BUDGET_DATA.savings.monthly} max={BUDGET_DATA.savings.target} color="#10b981" />
@@ -966,23 +1023,23 @@ export default function App() {
 
             {/* Cutoff 1 */}
             <CutoffCard
-              title="Cutoff 1 — First Payday"
-              income={BUDGET_DATA.income.c1}
+              title={`Cutoff 1 — ${budgetC1Cycle ? `Paid ${budgetC1Cycle.paidLabel}` : "First Payday"}${budgetC1Data?.isActual ? " ✓" : " ~"}`}
+              income={budgetC1}
               items={BUDGET_DATA.cutoff1.budget}
               carryOver={null}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#334155", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-              <span>₱{BUDGET_DATA.carryOver.toLocaleString()} carry-over →</span>
+              <span>₱{dynamicCarryOver.toLocaleString()} carry-over →</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
 
             {/* Cutoff 2 */}
             <CutoffCard
-              title="Cutoff 2 — Second Payday"
-              income={BUDGET_DATA.income.c2}
+              title={`Cutoff 2 — ${budgetC2Cycle ? `Paid ${budgetC2Cycle.paidLabel}` : "Second Payday"}${budgetC2Data?.isActual ? " ✓" : " ~"}`}
+              income={budgetC2}
               items={BUDGET_DATA.cutoff2.budget}
-              carryOver={BUDGET_DATA.carryOver}
+              carryOver={dynamicCarryOver}
             />
 
             {/* CC Strategy */}
