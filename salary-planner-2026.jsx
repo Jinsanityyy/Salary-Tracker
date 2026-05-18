@@ -7,17 +7,26 @@ const MASTER_RATE = 3.75;
 const HOURS       = 8;
 const LIVE_FX     = 61.739;
 
-// ─── US Federal Holidays 2025–2026 ───────────────────────────────────────────
-const US_HOLIDAYS = new Set([
-  "2025-11-27", "2025-12-25", "2026-01-01", "2026-01-19", "2026-02-16",
-  "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07", "2026-10-12",
-  "2026-11-11", "2026-11-26", "2026-12-25",
-]);
+// ─── Exact working days per cutoff (from official schedule) ──────────────────
+const DAYS_OVERRIDE = {
+  "2025-11-B": 11,
+  "2026-0-A":  10, "2026-0-B":  12,
+  "2026-1-A":  11, "2026-1-B":   9,
+  "2026-2-A":  11, "2026-2-B":  12,
+  "2026-3-A":  10, "2026-3-B":  10,
+  "2026-4-A":  11, "2026-4-B":  12,
+  "2026-5-A":  11, "2026-5-B":  11,
+  "2026-6-A":  10, "2026-6-B":  11,
+  "2026-7-A":  11, "2026-7-B":  12,
+  "2026-8-A":  11, "2026-8-B":  11,
+  "2026-9-A":  10, "2026-9-B":  10,
+  "2026-10-A": 12, "2026-10-B": 11,
+  "2026-11-A": 11, "2026-11-B": 10,
+};
 
 function isWorkday(date) {
   const dow = date.getDay();
-  if (dow === 0 || dow === 6) return false;
-  return !US_HOLIDAYS.has(date.toISOString().slice(0, 10));
+  return dow !== 0 && dow !== 6;
 }
 
 function workdaysBetween(start, end) {
@@ -51,7 +60,7 @@ function buildCycles() {
       paidDate   = new Date(eY, eM, 20);
     }
     if (paidDate > new Date(2026, 11, 31)) continue;
-    const days      = workdaysBetween(cycleStart, cycleEnd);
+    const days      = DAYS_OVERRIDE[key] ?? workdaysBetween(cycleStart, cycleEnd);
     const key       = `${y}-${m}-${type}`;
     const startStr  = cycleStart.toLocaleDateString("en", { month: "short", day: "numeric" });
     const endStr    = cycleEnd.toLocaleDateString("en",   { month: "short", day: "numeric" });
