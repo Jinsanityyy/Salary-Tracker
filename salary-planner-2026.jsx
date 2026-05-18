@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-// Cloud sync disabled until Supabase env vars are configured in Vercel
-const supabase = null;
+import { supabase } from "./src/supabase.js";
 
 // ─── Rates ────────────────────────────────────────────────────────────────────
 const CLIENT_RATE = 5.50;
