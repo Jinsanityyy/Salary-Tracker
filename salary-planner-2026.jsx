@@ -108,7 +108,7 @@ const BUDGET_DATA = {
       { label: "Taxi (grocery run)", amount: 150,  type: "variable" },
       { label: "Personal Allowance", amount: 1500, type: "flex" },
       { label: "Emergency Buffer",   amount: 1000, type: "flex" },
-      { label: "Savings Transfer",   amount: 3500, type: "savings" },
+      { label: "Savings Transfer",   amount: 6000, type: "savings" },
     ],
   },
   cutoff2: {
@@ -117,10 +117,10 @@ const BUDGET_DATA = {
       { label: "Credit-To-Cash 5",     amount: 8923,  type: "debt" },
       { label: "Food / Misc",         amount: 2500, type: "variable" },
       { label: "Personal Allowance",  amount: 1000, type: "flex" },
-      { label: "Savings Transfer",    amount: 3000, type: "savings" },
+      { label: "Savings Transfer",    amount: 5500, type: "savings" },
     ],
   },
-  savings: { monthly: 6500, target: 19500, label: "1-Month Emergency Fund", months: 3 },
+  savings: { monthly: 11500, target: 19500, label: "1-Month Emergency Fund", months: 2 },
   carryOver: 10000,
   ccTotal: 8923,
   foodLimits: [
