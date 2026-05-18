@@ -1870,6 +1870,91 @@ export default function App() {
                 </div>
               </div>
 
+              {/* CC Payoff Unlock */}
+              {(() => {
+                const cc           = CC_LOANS[0];
+                const ccMonths     = Math.ceil(cc.remaining / cc.monthly);
+                const ccDoneDate   = new Date(TODAY);
+                ccDoneDate.setMonth(ccDoneDate.getMonth() + ccMonths);
+                const ccDoneStr    = ccDoneDate.toLocaleDateString("en", { month: "long", year: "numeric" });
+                const boostedRate  = monthlyRate + Math.round(cc.monthly);
+                const savedAtCC    = totalSaved + ccMonths * monthlyRate;
+                const fmtM = mo => mo >= 12 ? `${Math.floor(mo/12)}y${mo%12>0?` ${mo%12}mo`:""}` : `${mo}mo`;
+
+                return (
+                  <div style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.22)", borderRadius: 16, padding: "16px 18px" }}>
+                    <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>CC Payoff Unlock</div>
+
+                    {/* When CC ends */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, padding: "10px 14px", background: "rgba(251,191,36,0.07)", borderRadius: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: "var(--fg3)", marginBottom: 2 }}>Credit-To-Cash 5 ends</div>
+                        <div style={{ fontSize: 15, color: "#fbbf24", fontWeight: 600 }}>{ccDoneStr}</div>
+                        <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 1 }}>in ~{ccMonths} months · ₱{Math.round(cc.remaining).toLocaleString()} remaining</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 4 }}>Monthly freed</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 19, color: "#22c55e", fontWeight: 700 }}>+₱{Math.round(cc.monthly).toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    {/* Rate comparison */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center", marginBottom: 16 }}>
+                      <div style={{ background: "var(--raised)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 4, letterSpacing: "0.06em" }}>NOW</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, color: "var(--teal)", fontWeight: 600 }}>₱{monthlyRate.toLocaleString()}</div>
+                        <div style={{ fontSize: 9, color: "var(--fg4)", marginTop: 2 }}>per month</div>
+                      </div>
+                      <div style={{ fontSize: 18, color: "var(--fg4)", textAlign: "center" }}>→</div>
+                      <div style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 9, color: "#22c55e", marginBottom: 4, letterSpacing: "0.06em" }}>AFTER CC</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, color: "#22c55e", fontWeight: 700 }}>₱{boostedRate.toLocaleString()}</div>
+                        <div style={{ fontSize: 9, color: "#22c55e", marginTop: 2 }}>per month</div>
+                      </div>
+                    </div>
+
+                    {/* Milestone acceleration */}
+                    <div style={{ fontSize: 10, color: "var(--fg4)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Milestone Acceleration</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {MILESTONES.filter(m => totalSaved < m.amount).map((m, i, arr) => {
+                        const curRem    = m.amount - totalSaved;
+                        const curMonths = Math.ceil(curRem / monthlyRate);
+                        let boostMonths;
+                        if (savedAtCC >= m.amount) {
+                          boostMonths = curMonths; // reached before CC ends anyway
+                        } else {
+                          const remAfterCC = m.amount - savedAtCC;
+                          boostMonths = ccMonths + Math.ceil(remAfterCC / boostedRate);
+                        }
+                        const saved = curMonths - boostMonths;
+                        return (
+                          <div key={m.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0",
+                            borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                            <span style={{ fontSize: 15, width: 22, flexShrink: 0 }}>{m.icon}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, color: "var(--fg3)", marginBottom: 4 }}>{m.label}</div>
+                              <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 11, color: "var(--fg4)", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{fmtM(curMonths)}</span>
+                                <span style={{ fontSize: 10, color: "var(--fg4)" }}>→</span>
+                                <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 600, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{fmtM(boostMonths)}</span>
+                                {saved > 0 && (
+                                  <span style={{ fontSize: 10, color: "#22c55e", background: "rgba(34,197,94,0.1)", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
+                                    {fmtM(saved)} faster
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, color: "var(--fg4)", flexShrink: 0 }}>
+                              ₱{m.amount.toLocaleString()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Milestones */}
               <div style={{ background: "var(--surface)", border: "1px solid rgba(56,189,248,0.1)", borderRadius: 16, padding: "16px 18px" }}>
                 <div style={{ fontSize: 10, color: "var(--fg3)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Milestones</div>
