@@ -295,7 +295,7 @@ export default function App() {
     if (!file || !key) return;
 
     if (!apiKey.trim()) {
-      setUploadErrors(prev => ({ ...prev, [key]: "Enter your Google AI key (🔑 AI Key button above)" }));
+      setUploadErrors(prev => ({ ...prev, [key]: "Enter your Groq key (🔑 Groq Key button above)" }));
       return;
     }
 
@@ -306,32 +306,33 @@ export default function App() {
       const base64    = await fileToBase64(file);
       const mediaType = file.type || "image/jpeg";
 
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { inline_data: { mime_type: mediaType, data: base64 } },
-                {
-                  text: `Extract payslip data and respond with JSON only, no markdown:\n{"php":<total PHP amount as number>,"usd":<USD amount as number>,"fxRate":<exchange rate as number>,"hours":<total hours worked as number>}\nUse null for any field not found.`,
-                },
-              ],
-            }],
-            generationConfig: { temperature: 0, maxOutputTokens: 512 },
-          }),
-        }
-      );
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 512,
+          temperature: 0,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: `data:${mediaType};base64,${base64}` } },
+              { type: "text", text: `Extract payslip data and respond with JSON only, no markdown:\n{"php":<total PHP amount as number>,"usd":<USD amount as number>,"fxRate":<exchange rate as number>,"hours":<total hours worked as number>}\nUse null for any field not found.` },
+            ],
+          }],
+        }),
+      });
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err?.error?.message || `API error ${resp.status}`);
       }
 
-      const data      = await resp.json();
-      const rawText   = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const data    = await resp.json();
+      const rawText = data.choices?.[0]?.message?.content || "";
       const extracted = JSON.parse(rawText.replace(/```json|```/g, "").trim());
 
       setEditVal({
@@ -456,12 +457,12 @@ export default function App() {
               border: `1px solid ${showApiKey ? "rgba(167,139,250,.4)" : "rgba(255,255,255,.08)"}`,
               borderRadius: 8, padding: "5px 11px", fontSize: 11,
               color: showApiKey ? "#c4b5fd" : "#475569" }}>
-              🔑 {apiKey ? "AI Key ✓" : "AI Key (free)"}
+              🔑 {apiKey ? "Groq Key ✓" : "Groq Key (free)"}
             </button>
             {showApiKey && (
               <input
                 type="password"
-                placeholder="AIza… (Google AI Studio)"
+                placeholder="gsk_… (console.groq.com)"
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
                 style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(167,139,250,.3)",
