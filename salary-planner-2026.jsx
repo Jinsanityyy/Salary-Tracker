@@ -723,6 +723,7 @@ export default function App() {
   }
 
   // ── Derived values ────────────────────────────────────────────────────────
+  const effectiveFx    = useCustomFx && parseFloat(customFx) > 0 ? parseFloat(customFx) : LIVE_FX;
   const confirmedCount = Object.keys(actuals).length;
   const totalCycles    = ALL_CYCLES.length;
   const totalPhp       = ALL_CYCLES.reduce((a, c) => a + getCycleData(c).php, 0);
