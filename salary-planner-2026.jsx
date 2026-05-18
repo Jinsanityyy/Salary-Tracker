@@ -503,14 +503,24 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
     localStorage.removeItem(`hidden_base_${cardKey}`);
   }
 
+  // paidItems: { [label]: "bank" | "cash" }
+  // "bank" = paid from bank account (outflow), "cash" = cash received (e.g. partner reimbursement)
   const [paidItems, setPaidItems] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(`paid_items_${cardKey}`) || "[]"); }
-    catch { return []; }
+    try {
+      const stored = JSON.parse(localStorage.getItem(`paid_items_${cardKey}`) || "{}");
+      if (Array.isArray(stored)) {
+        const migrated = {};
+        stored.forEach(l => { migrated[l] = "bank"; });
+        return migrated;
+      }
+      return stored;
+    } catch { return {}; }
   });
   function togglePaid(label) {
-    const updated = paidItems.includes(label)
-      ? paidItems.filter(l => l !== label)
-      : [...paidItems, label];
+    const cur = paidItems[label];
+    const next = !cur ? "bank" : cur === "bank" ? "cash" : null;
+    const updated = { ...paidItems };
+    if (next) updated[label] = next; else delete updated[label];
     setPaidItems(updated);
     localStorage.setItem(`paid_items_${cardKey}`, JSON.stringify(updated));
   }
@@ -545,31 +555,42 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
   const afterFlex    = afterBills - flexTotal;
   const inPocket     = afterFlex - savingsTotal;
 
-  const allBudgetItems = [...billItems, ...flexItems, ...savingsItems];
-  const paidTotal      = allBudgetItems.filter(i => paidItems.includes(i.label)).reduce((a, b) => a + b.amount, 0);
-  const actualBalance  = income - paidTotal;
+  const allBudgetItems  = [...billItems, ...flexItems, ...savingsItems];
+  const bankPaidTotal   = allBudgetItems.filter(i => paidItems[i.label] === "bank").reduce((a, b) => a + b.amount, 0);
+  const cashRxTotal     = allBudgetItems.filter(i => paidItems[i.label] === "cash").reduce((a, b) => a + b.amount, 0);
+  const bankRemaining   = income - bankPaidTotal;
+  const anyPaid         = Object.keys(paidItems).length > 0;
 
-  const ItemRow = ({ label, amount, accent, onDelete, isPaid, onTogglePaid }) => (
-    <div style={{ display: "flex", alignItems: "center",
-      padding: "9px 0",
-      borderLeft: `2px solid ${isPaid ? "#22c55e" : accent}`,
-      borderBottom: "1px solid rgba(255,255,255,0.03)",
-      background: isPaid ? "rgba(34,197,94,0.04)" : "transparent" }}>
-      <button onClick={onTogglePaid} style={{
-        background: isPaid ? "rgba(34,197,94,0.15)" : "none",
-        border: `1.5px solid ${isPaid ? "#22c55e" : "rgba(255,255,255,0.18)"}`,
-        borderRadius: "50%", width: 18, height: 18, minWidth: 18, cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        margin: "0 10px 0 10px", color: "#22c55e", fontSize: 10, padding: 0, lineHeight: 1 }}>
-        {isPaid ? "✓" : ""}
-      </button>
-      <span style={{ fontSize: 13, color: isPaid ? "var(--fg4)" : "var(--fg2)", flex: 1, letterSpacing: "-0.005em",
-        textDecoration: isPaid ? "line-through" : "none" }}>{label}</span>
-      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13,
-        color: isPaid ? "#22c55e" : "var(--fg2)", fontWeight: 500 }}>₱{amount.toLocaleString()}</span>
-      {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "var(--fg4)", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
-    </div>
-  );
+  const ItemRow = ({ label, amount, accent, onDelete, paidState, onTogglePaid }) => {
+    const isBank = paidState === "bank";
+    const isCash = paidState === "cash";
+    const borderColor = isBank ? "#60a5fa" : isCash ? "#22c55e" : accent;
+    const bgColor     = isBank ? "rgba(96,165,250,0.04)" : isCash ? "rgba(34,197,94,0.06)" : "transparent";
+    const labelColor  = (isBank || isCash) ? "var(--fg4)" : "var(--fg2)";
+    const amtColor    = isBank ? "#60a5fa" : isCash ? "#22c55e" : "var(--fg2)";
+    return (
+      <div style={{ display: "flex", alignItems: "center", padding: "9px 0",
+        borderLeft: `2px solid ${borderColor}`,
+        borderBottom: "1px solid rgba(255,255,255,0.03)", background: bgColor }}>
+        <button onClick={onTogglePaid} title={!paidState ? "Tap: paid from bank  •  Tap again: cash received" : paidState === "bank" ? "From bank  •  Tap: cash received" : "Cash received  •  Tap: clear"} style={{
+          background: isBank ? "rgba(96,165,250,0.15)" : isCash ? "rgba(34,197,94,0.15)" : "none",
+          border: `1.5px solid ${isBank ? "#60a5fa" : isCash ? "#22c55e" : "rgba(255,255,255,0.18)"}`,
+          borderRadius: "50%", width: 18, height: 18, minWidth: 18, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 10px 0 10px", fontSize: 9, padding: 0, lineHeight: 1,
+          color: isBank ? "#60a5fa" : "#22c55e" }}>
+          {isBank ? "B" : isCash ? "✓" : ""}
+        </button>
+        <span style={{ fontSize: 13, color: labelColor, flex: 1, letterSpacing: "-0.005em",
+          textDecoration: (isBank || isCash) ? "line-through" : "none" }}>{label}</span>
+        {isCash && <span style={{ fontSize: 9, color: "#22c55e", marginRight: 6, letterSpacing: "0.02em" }}>CASH</span>}
+        {isBank && <span style={{ fontSize: 9, color: "#60a5fa", marginRight: 6, letterSpacing: "0.02em" }}>BANK</span>}
+        <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13,
+          color: amtColor, fontWeight: 500 }}>₱{amount.toLocaleString()}</span>
+        {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", color: "var(--fg4)", cursor: "pointer", fontSize: 15, padding: "0 0 0 10px", lineHeight: 1 }}>×</button>}
+      </div>
+    );
+  };
 
   const SubtotalRow = ({ label, value, color = "var(--fg2)" }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -598,10 +619,10 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {visibleItems.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
-            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />
+            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} onDelete={() => hideBaseItem(item.label)} paidState={paidItems[item.label]} onTogglePaid={() => togglePaid(item.label)} />
           ))}
           {extras.map((item, i) => (
-            <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />
+            <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} paidState={paidItems[item.label]} onTogglePaid={() => togglePaid(item.label)} />
           ))}
         </div>
 
@@ -630,7 +651,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.08)" }}>
           <div style={{ fontSize: 9, color: "var(--grn)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Allowance</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />)}
+            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" onDelete={() => hideBaseItem(item.label)} paidState={paidItems[item.label]} onTogglePaid={() => togglePaid(item.label)} />)}
           </div>
           <SubtotalRow label="Before savings" value={afterFlex} color={afterFlex >= 0 ? "var(--fg2)" : "var(--rose)"} />
         </div>
@@ -641,7 +662,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(20,184,166,0.15)", background: "rgba(20,184,166,0.04)" }}>
           <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Savings</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" onDelete={() => hideBaseItem(item.label)} isPaid={paidItems.includes(item.label)} onTogglePaid={() => togglePaid(item.label)} />)}
+            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" onDelete={() => hideBaseItem(item.label)} paidState={paidItems[item.label]} onTogglePaid={() => togglePaid(item.label)} />)}
           </div>
         </div>
       )}
@@ -653,30 +674,56 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         </div>
       )}
 
-      {/* ── Actual Balance (paid checklist) ── */}
-      {paidItems.length > 0 && (
-        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(34,197,94,0.15)", background: "rgba(34,197,94,0.04)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500 }}>Actual Balance</div>
-            <button onClick={() => { setPaidItems([]); localStorage.removeItem(`paid_items_${cardKey}`); }}
-              style={{ background: "none", border: "none", color: "var(--fg4)", fontSize: 10, cursor: "pointer", padding: 0 }}>Clear</button>
+      {/* ── Actual Balance (bank + cash buckets) ── */}
+      {anyPaid && (
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          {/* hint row */}
+          <div style={{ padding: "8px 18px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 9, color: "var(--fg4)", letterSpacing: "0.06em" }}>
+              ⭕ tap → <span style={{ color: "#60a5fa" }}>B bank</span> → <span style={{ color: "#22c55e" }}>✓ cash</span> → clear
+            </span>
+            <button onClick={() => { setPaidItems({}); localStorage.removeItem(`paid_items_${cardKey}`); }}
+              style={{ background: "none", border: "none", color: "var(--fg4)", fontSize: 10, cursor: "pointer", padding: "4px 0" }}>Clear all</button>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)" }}>
-              <span>Income</span>
-              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>₱{income.toLocaleString()}</span>
+
+          {/* Bank bucket */}
+          {bankPaidTotal > 0 && (
+            <div style={{ padding: "12px 18px", background: "rgba(96,165,250,0.04)", borderTop: "1px solid rgba(96,165,250,0.1)", marginTop: 8 }}>
+              <div style={{ fontSize: 9, color: "#60a5fa", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, marginBottom: 8 }}>Bank Balance</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)" }}>
+                  <span>Salary (in bank)</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>₱{income.toLocaleString()}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#f87171" }}>
+                  <span>Paid from bank</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>−₱{bankPaidTotal.toLocaleString()}</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                borderTop: "1px solid rgba(96,165,250,0.12)", marginTop: 8, paddingTop: 8 }}>
+                <span style={{ fontSize: 11, color: "#60a5fa", letterSpacing: "0.04em", fontWeight: 600 }}>BANK REMAINING</span>
+                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, fontWeight: 500,
+                  color: bankRemaining >= 0 ? "#60a5fa" : "#f43f5e" }}>₱{bankRemaining.toLocaleString()}</span>
+              </div>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#f87171" }}>
-              <span>Paid out ({paidItems.length} item{paidItems.length > 1 ? "s" : ""})</span>
-              <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>−₱{paidTotal.toLocaleString()}</span>
+          )}
+
+          {/* Cash bucket */}
+          {cashRxTotal > 0 && (
+            <div style={{ padding: "12px 18px", background: "rgba(34,197,94,0.04)", borderTop: "1px solid rgba(34,197,94,0.1)" }}>
+              <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, marginBottom: 8 }}>Cash in Hand</div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)", marginBottom: 8 }}>
+                <span>Cash received (partner share)</span>
+                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#22c55e" }}>+₱{cashRxTotal.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                borderTop: "1px solid rgba(34,197,94,0.12)", paddingTop: 8 }}>
+                <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: "0.04em", fontWeight: 600 }}>CASH IN HAND</span>
+                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, fontWeight: 500, color: "#22c55e" }}>₱{cashRxTotal.toLocaleString()}</span>
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
-            borderTop: "1px solid rgba(34,197,94,0.15)", paddingTop: 10 }}>
-            <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: "0.04em", fontWeight: 600 }}>CASH IN HAND</span>
-            <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, fontWeight: 500,
-              color: actualBalance >= 0 ? "#22c55e" : "#f43f5e" }}>₱{actualBalance.toLocaleString()}</span>
-          </div>
+          )}
         </div>
       )}
 
