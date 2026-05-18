@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { supabase } from "./src/supabase.js";
 
 // ─── Rates ────────────────────────────────────────────────────────────────────
 const CLIENT_RATE = 5.50;
@@ -385,7 +386,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       <div style={{ padding: "16px 18px 14px" }}>
         <div style={{ fontSize: 9, color: "#475569", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <div style={{ fontSize: 10, color: "#64748b" }}>SAHOD</div>
+          <div style={{ fontSize: 10, color: "#64748b" }}>INCOME</div>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, color: "#e2e8f0", fontWeight: 700 }}>₱{income.toLocaleString()}</div>
         </div>
       </div>
@@ -393,7 +394,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       {/* ── Bills & Gastos ── */}
       <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>
-          Bills & Gastos
+          Bills & Expenses
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
@@ -406,10 +407,10 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
 
         {showAdd ? (
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-            <input placeholder="Anong gastos? (e.g. Medicine)" value={newLabel} onChange={e => setNewLabel(e.target.value)}
+            <input placeholder="What expense? (e.g. Medicine)" value={newLabel} onChange={e => setNewLabel(e.target.value)}
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }} />
             <div style={{ display: "flex", gap: 8 }}>
-              <input placeholder="Halaga (₱)" type="number" inputMode="decimal" value={newAmt} onChange={e => setNewAmt(e.target.value)} onKeyDown={e => e.key === "Enter" && addExtra()}
+              <input placeholder="Amount (₱)" type="number" inputMode="decimal" value={newAmt} onChange={e => setNewAmt(e.target.value)} onKeyDown={e => e.key === "Enter" && addExtra()}
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
               <button onClick={addExtra} style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 8, padding: "8px 16px", color: "#fcd34d", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
               <button onClick={() => { setShowAdd(false); setNewLabel(""); setNewAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>✕</button>
@@ -421,7 +422,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
           </button>
         )}
 
-        <SubtotalRow label="Matitira pagkatapos ng bills" value={afterBills} color={afterBills >= 0 ? "#cbd5e1" : "#fca5a5"} />
+        <SubtotalRow label="Remaining after bills" value={afterBills} color={afterBills >= 0 ? "#cbd5e1" : "#fca5a5"} />
       </div>
 
       {/* ── Allowance ── */}
@@ -431,14 +432,14 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" />)}
           </div>
-          <SubtotalRow label="Bago ilagay sa savings" value={afterFlex} color={afterFlex >= 0 ? "#cbd5e1" : "#fca5a5"} />
+          <SubtotalRow label="Before savings" value={afterFlex} color={afterFlex >= 0 ? "#cbd5e1" : "#fca5a5"} />
         </div>
       )}
 
       {/* ── Savings ── */}
       {savingsItems.length > 0 && (
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(16,185,129,0.15)", background: "rgba(16,185,129,0.04)" }}>
-          <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Itatabi — Savings</div>
+          <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Savings</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#10b981" />)}
           </div>
@@ -449,14 +450,14 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
       <div style={{ padding: "16px 18px", borderTop: `1px solid ${inPocket >= 0 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
         background: inPocket >= 0 ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)" }}>
         <div style={{ fontSize: 9, color: inPocket >= 0 ? "#10b981" : "#ef4444", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-          Pocket Money Mo — Pagkatapos ng Lahat
+          Pocket Money — After Everything
         </div>
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700,
           color: inPocket >= 0 ? "#6ee7b7" : "#fca5a5" }}>
           ₱{inPocket.toLocaleString()}
         </div>
         <div style={{ fontSize: 10, color: "#475569", marginTop: 4 }}>
-          {Math.round((inPocket / income) * 100)}% ng iyong sahod na ₱{income.toLocaleString()}
+          {Math.round((inPocket / income) * 100)}% of your ₱{income.toLocaleString()} income
         </div>
       </div>
     </div>
@@ -516,17 +517,95 @@ export default function App() {
       const toStore = Object.fromEntries(Object.entries(actuals).filter(([, v]) => !v.locked));
       localStorage.setItem("salary_planner_actuals_v2", JSON.stringify(toStore));
     } catch {}
+    schedulePush();
   }, [actuals]);
 
   useEffect(() => {
     try { localStorage.setItem("budget_tasks_v1", JSON.stringify(budgetTasks)); } catch {}
+    schedulePush();
   }, [budgetTasks]);
 
   useEffect(() => {
     try { localStorage.setItem("savings_log_v1", JSON.stringify(savingsLog)); } catch {}
+    schedulePush();
   }, [savingsLog]);
 
-  const effectiveFx = useCustomFx && parseFloat(customFx) > 0 ? parseFloat(customFx) : LIVE_FX;
+  // ── Cloud Sync (Supabase) ──────────────────────────────────────────────────
+  const [syncId, setSyncId] = useState(() => {
+    let id = localStorage.getItem("salary_sync_id");
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem("salary_sync_id", id); }
+    return id;
+  });
+  const [syncStatus, setSyncStatus] = useState("idle"); // idle | syncing | synced | error | unconfigured
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncIdInput, setSyncIdInput]     = useState("");
+  const [syncIdError, setSyncIdError]     = useState("");
+  const pushTimer = useRef(null);
+
+  function collectData() {
+    return {
+      actuals:     Object.fromEntries(Object.entries(actuals).filter(([, v]) => !v.locked)),
+      budgetTasks,
+      savingsLog,
+      extraFirst:  JSON.parse(localStorage.getItem("extra_expenses_budget-first")  || "[]"),
+      extraSecond: JSON.parse(localStorage.getItem("extra_expenses_budget-second") || "[]"),
+    };
+  }
+
+  function applyData(p) {
+    if (p.actuals)     setActuals({ ...LOCKED_PAYSLIPS, ...p.actuals });
+    if (p.budgetTasks) setBudgetTasks(p.budgetTasks);
+    if (p.savingsLog)  setSavingsLog(p.savingsLog);
+    if (p.extraFirst)  { setBudgetFirstExtras(p.extraFirst); localStorage.setItem("extra_expenses_budget-first",  JSON.stringify(p.extraFirst)); }
+    if (p.extraSecond) { localStorage.setItem("extra_expenses_budget-second", JSON.stringify(p.extraSecond)); }
+  }
+
+  async function pushToCloud(id) {
+    if (!supabase) { setSyncStatus("unconfigured"); return; }
+    setSyncStatus("syncing");
+    try {
+      const { error } = await supabase.from("salary_sync").upsert({ sync_id: id, data: collectData(), updated_at: new Date().toISOString() }, { onConflict: "sync_id" });
+      setSyncStatus(error ? "error" : "synced");
+      if (!error) showToast("Synced to cloud");
+    } catch { setSyncStatus("error"); }
+  }
+
+  async function pullFromCloud(id) {
+    if (!supabase) { setSyncStatus("unconfigured"); return false; }
+    setSyncStatus("syncing");
+    try {
+      const { data, error } = await supabase.from("salary_sync").select("data").eq("sync_id", id).single();
+      if (error || !data) { setSyncStatus("error"); return false; }
+      applyData(data.data);
+      setSyncStatus("synced");
+      showToast("Data loaded from cloud!");
+      return true;
+    } catch { setSyncStatus("error"); return false; }
+  }
+
+  async function switchSyncId() {
+    const trimmed = syncIdInput.trim();
+    if (!trimmed) { setSyncIdError("Enter a Sync ID."); return; }
+    const ok = await pullFromCloud(trimmed);
+    if (ok) {
+      localStorage.setItem("salary_sync_id", trimmed);
+      setSyncId(trimmed);
+      setShowSyncModal(false);
+      setSyncIdInput(""); setSyncIdError("");
+    } else {
+      setSyncIdError("Sync ID not found. Check and try again.");
+    }
+  }
+
+  // Pull on first load
+  useEffect(() => { if (supabase) pullFromCloud(syncId); }, []);
+
+  // Auto-push 3 seconds after any data change
+  function schedulePush() {
+    if (!supabase) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => pushToCloud(syncId), 3000);
+  }
   const nextPayKey  = ALL_CYCLES.find(c => c.paidDate >= TODAY)?.key;
 
   function showToast(msg, type = "success") {
@@ -727,6 +806,59 @@ export default function App() {
         </div>
       )}
 
+      {/* ── SYNC MODAL ── */}
+      {showSyncModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          onClick={() => setShowSyncModal(false)}>
+          <div style={{ background: "#0f1623", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 24, width: "100%", maxWidth: 400 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 10, color: "#6366f1", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>Cloud Sync</div>
+
+            {!supabase && (
+              <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, padding: "12px 14px", marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#fca5a5", marginBottom: 6, fontWeight: 600 }}>Sync not configured</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.6 }}>
+                  To enable cross-device sync, add these to your Vercel environment variables:
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 10, color: "#fcd34d", marginTop: 8, lineHeight: 1.8 }}>
+                  VITE_SUPABASE_URL<br/>VITE_SUPABASE_ANON_KEY
+                </div>
+                <div style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>See the setup guide below.</div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>Your Sync ID (this device)</div>
+              <div style={{ fontFamily: "monospace", fontSize: 12, color: "#a5b4fc", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 8, padding: "10px 12px", wordBreak: "break-all", marginBottom: 6 }}>{syncId}</div>
+              <div style={{ fontSize: 10, color: "#475569" }}>Copy this ID and enter it on your other device to sync.</div>
+            </div>
+
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>Load data from another device</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input placeholder="Paste Sync ID here" value={syncIdInput} onChange={e => { setSyncIdInput(e.target.value); setSyncIdError(""); }}
+                  style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "#e2e8f0", outline: "none", fontFamily: "monospace" }} />
+                <button onClick={switchSyncId}
+                  style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 8, padding: "9px 16px", color: "#a5b4fc", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Load</button>
+              </div>
+              {syncIdError && <div style={{ fontSize: 11, color: "#fca5a5", marginTop: 6 }}>{syncIdError}</div>}
+            </div>
+
+            {supabase && (
+              <button onClick={() => pushToCloud(syncId)}
+                style={{ width: "100%", marginTop: 12, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: "11px", color: "#6ee7b7", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+                ↑ Push to Cloud Now
+              </button>
+            )}
+
+            <button onClick={() => setShowSyncModal(false)}
+              style={{ width: "100%", marginTop: 8, background: "none", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px", color: "#64748b", fontSize: 12, cursor: "pointer" }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── HEADER ── */}
       <div style={{ background: "linear-gradient(145deg, rgba(99,102,241,.12) 0%, rgba(16,185,129,.03) 100%)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "22px 18px 18px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -759,6 +891,18 @@ export default function App() {
               <input type="number" placeholder="e.g. 62.00" value={customFx} onChange={e => setCustomFx(e.target.value)}
                 style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 8, padding: "5px 9px", fontSize: 12, color: "#fcd34d", width: 100, fontFamily: "'DM Mono', monospace" }} />
             )}
+          </div>
+
+          {/* Sync row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <button onClick={() => setShowSyncModal(true)} style={{
+              background: syncStatus === "synced" ? "rgba(16,185,129,0.1)" : syncStatus === "error" || syncStatus === "unconfigured" ? "rgba(239,68,68,0.1)" : "rgba(99,102,241,0.08)",
+              border: `1px solid ${syncStatus === "synced" ? "rgba(16,185,129,0.3)" : syncStatus === "error" || syncStatus === "unconfigured" ? "rgba(239,68,68,0.3)" : "rgba(99,102,241,0.25)"}`,
+              borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer",
+              color: syncStatus === "synced" ? "#6ee7b7" : syncStatus === "error" || syncStatus === "unconfigured" ? "#fca5a5" : "#a5b4fc" }}>
+              {syncStatus === "syncing" ? "⟳ Syncing…" : syncStatus === "synced" ? "✓ Cloud Synced" : syncStatus === "unconfigured" ? "☁ Setup Sync" : syncStatus === "error" ? "✗ Sync Error" : "☁ Cloud Sync"}
+            </button>
+            <span style={{ fontSize: 9, color: "#334155", fontFamily: "monospace" }}>{syncId.slice(0, 8)}…</span>
           </div>
 
           {/* Stat cards */}
@@ -1166,7 +1310,7 @@ export default function App() {
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-              <span>~₱{dynamicCarryOver.toLocaleString()} estimated carry-over (hindi guaranteed)</span>
+              <span>~₱{dynamicCarryOver.toLocaleString()} estimated carry-over (not guaranteed)</span>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
             <CutoffCard
@@ -1281,16 +1425,16 @@ export default function App() {
               <div style={{ background: "linear-gradient(145deg, rgba(16,185,129,0.1), rgba(99,102,241,0.08))", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 20, padding: "22px 18px" }}>
                 <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Savings Goal</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 800, color: "#6ee7b7", marginBottom: 2 }}>₱1,000,000</div>
-                <div style={{ fontSize: 12, color: "#475569", marginBottom: 18 }}>isang milyong piso</div>
+                <div style={{ fontSize: 12, color: "#475569", marginBottom: 18 }}>one million pesos</div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                   <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px" }}>
-                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>NAIIPON</div>
+                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>SAVED</div>
                     <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#6ee7b7", fontWeight: 700 }}>₱{totalSaved.toLocaleString()}</div>
                     <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{pct.toFixed(2)}% ng goal</div>
                   </div>
                   <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px" }}>
-                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>KULANG PA</div>
+                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>STILL NEED</div>
                     <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#a5b4fc", fontWeight: 700 }}>₱{remaining.toLocaleString()}</div>
                     <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>
                       {monthsLeft > 0
@@ -1345,15 +1489,15 @@ export default function App() {
 
               {/* Log entry form */}
               <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "16px 18px" }}>
-                <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>I-Log ang Savings</div>
+                <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Log a Savings Entry</div>
 
                 {showAddSavings ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <input placeholder="Para saan? (e.g. May C2 savings)"
+                    <input placeholder="Label (e.g. May C2 savings)"
                       value={newSavingsLabel} onChange={e => setNewSavingsLabel(e.target.value)}
                       style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }} />
                     <div style={{ display: "flex", gap: 8 }}>
-                      <input placeholder="Halaga (₱)" type="number" inputMode="decimal"
+                      <input placeholder="Amount (₱)" type="number" inputMode="decimal"
                         value={newSavingsAmt} onChange={e => setNewSavingsAmt(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && addSavingsEntry()}
                         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
@@ -1366,7 +1510,7 @@ export default function App() {
                 ) : (
                   <button onClick={() => setShowAddSavings(true)}
                     style={{ background: "rgba(16,185,129,0.08)", border: "1px dashed rgba(16,185,129,0.3)", borderRadius: 10, padding: "12px 16px", color: "#10b981", fontSize: 13, cursor: "pointer", width: "100%", textAlign: "center", fontWeight: 500 }}>
-                    + Mag-log ng savings
+                    + Log Savings
                   </button>
                 )}
               </div>
