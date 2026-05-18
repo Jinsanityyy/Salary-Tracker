@@ -373,9 +373,23 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
     try { return JSON.parse(localStorage.getItem(`extra_expenses_${cardKey}`) || "[]"); }
     catch { return []; }
   });
+  const [hiddenBase, setHiddenBase] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`hidden_base_${cardKey}`) || "[]"); }
+    catch { return []; }
+  });
   const [showAdd, setShowAdd]   = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newAmt, setNewAmt]     = useState("");
+
+  function hideBaseItem(label) {
+    const updated = [...hiddenBase, label];
+    setHiddenBase(updated);
+    localStorage.setItem(`hidden_base_${cardKey}`, JSON.stringify(updated));
+  }
+  function restoreBaseItems() {
+    setHiddenBase([]);
+    localStorage.removeItem(`hidden_base_${cardKey}`);
+  }
 
   function addExtra() {
     const amt = parseFloat(newAmt);
@@ -393,9 +407,10 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
     if (onExtrasChange) onExtrasChange(updated);
   }
 
-  const billItems    = [...items.filter(i => ["fixed","debt","variable"].includes(i.type)), ...extras];
-  const flexItems    = items.filter(i => i.type === "flex");
-  const savingsItems = items.filter(i => i.type === "savings");
+  const visibleItems = items.filter(i => !hiddenBase.includes(i.label));
+  const billItems    = [...visibleItems.filter(i => ["fixed","debt","variable"].includes(i.type)), ...extras];
+  const flexItems    = visibleItems.filter(i => i.type === "flex");
+  const savingsItems = visibleItems.filter(i => i.type === "savings");
 
   const billsTotal   = billItems.reduce((a, b) => a + b.amount, 0);
   const flexTotal    = flexItems.reduce((a, b) => a + b.amount, 0);
@@ -442,8 +457,8 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
           Bills & Expenses
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {items.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
-            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} />
+          {visibleItems.filter(i => ["fixed","debt","variable"].includes(i.type)).map((item, i) => (
+            <ItemRow key={i} label={item.label} amount={item.amount} accent={TYPE_COLORS[item.type]?.border || "var(--fg4)"} onDelete={() => hideBaseItem(item.label)} />
           ))}
           {extras.map((item, i) => (
             <ItemRow key={`ex-${i}`} label={item.label} amount={item.amount} accent="#f59e0b" onDelete={() => removeExtra(i)} />
@@ -475,7 +490,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(56,189,248,0.08)" }}>
           <div style={{ fontSize: 9, color: "var(--grn)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Allowance</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" />)}
+            {flexItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#22c55e" onDelete={() => hideBaseItem(item.label)} />)}
           </div>
           <SubtotalRow label="Before savings" value={afterFlex} color={afterFlex >= 0 ? "var(--fg2)" : "var(--rose)"} />
         </div>
@@ -486,8 +501,15 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(20,184,166,0.15)", background: "rgba(20,184,166,0.04)" }}>
           <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>Savings</div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" />)}
+            {savingsItems.map((item, i) => <ItemRow key={i} label={item.label} amount={item.amount} accent="#14b8a6" onDelete={() => hideBaseItem(item.label)} />)}
           </div>
+        </div>
+      )}
+
+      {hiddenBase.length > 0 && (
+        <div style={{ padding: "6px 18px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 10, color: "var(--fg4)" }}>{hiddenBase.length} item{hiddenBase.length > 1 ? "s" : ""} hidden</span>
+          <button onClick={restoreBaseItems} style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 10, cursor: "pointer", padding: "4px 0" }}>Restore all</button>
         </div>
       )}
 
@@ -1366,6 +1388,84 @@ export default function App() {
                 <span>Done in {BUDGET_DATA.savings.months} months</span>
               </div>
             </div>
+
+            {/* Savings Advisor */}
+            {(() => {
+              const goal         = BUDGET_DATA.savings.target;
+              const totalSaved   = savingsLog.reduce((a, e) => a + e.amount, 0);
+              const remaining    = Math.max(0, goal - totalSaved);
+              const monthlySave  = BUDGET_DATA.savings.monthly;
+              const monthsLeft   = remaining > 0 ? Math.ceil(remaining / monthlySave) : 0;
+              const pct          = Math.min(Math.round((totalSaved / goal) * 100), 100);
+              const done         = totalSaved >= goal;
+
+              // Pocket money from this month's cutoffs (rough estimate)
+              const firstSavingsHidden  = firstItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
+              const secondSavingsHidden = secondItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
+              const firstPocket  = budgetFirstIncome  - firstItems.reduce((a,b) => a + b.amount, 0) - budgetFirstExtras.reduce((a,b) => a + b.amount, 0);
+              const secondPocket = budgetSecondIncome - secondItems.reduce((a,b) => a + b.amount, 0);
+              const totalPocket  = firstPocket + secondPocket;
+
+              // Tips
+              const tips = [];
+              if (!done) {
+                if (totalPocket > 8000) tips.push(`You have ~₱${totalPocket.toLocaleString()} pocket money this month — moving ₱${Math.min(2000, Math.floor(totalPocket * 0.3)).toLocaleString()} extra to savings cuts your timeline by ~${Math.round(Math.min(2000, Math.floor(totalPocket * 0.3)) / monthlySave * 30)} days.`);
+                if (budgetMonthly > 0) tips.push(`Your savings rate is ${Math.round((monthlySave / budgetMonthly) * 100)}% of income. Financial advisors recommend 20%. Bump it by ₱${Math.round(budgetMonthly * 0.2 - monthlySave).toLocaleString()} to hit 20%.`);
+                const topExpense = [...firstItems, ...secondItems].filter(i => i.type !== "savings").sort((a,b) => b.amount - a.amount)[0];
+                if (topExpense) tips.push(`Biggest expense: ${topExpense.label} at ₱${topExpense.amount.toLocaleString()}. Even a ₱500 reduction saves ₱6,000/year.`);
+              }
+
+              return (
+                <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.18)", borderRadius: 16, padding: "18px" }}>
+                  <div style={{ fontSize: 10, color: "#14b8a6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14, fontWeight: 500 }}>Savings Advisor</div>
+
+                  {/* Progress */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: done ? "var(--grn)" : "var(--teal)", fontWeight: 600 }}>
+                        ₱{totalSaved.toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--fg4)", marginTop: 2 }}>saved of ₱{goal.toLocaleString()} goal</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {done ? (
+                        <div style={{ fontSize: 13, color: "var(--grn)", fontWeight: 600 }}>Goal reached!</div>
+                      ) : (
+                        <>
+                          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 17, color: "var(--fg2)" }}>
+                            {monthsLeft}mo left
+                          </div>
+                          <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 1 }}>at ₱{monthlySave.toLocaleString()}/mo</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height: 6, background: "var(--bdr)", borderRadius: 99, overflow: "hidden", marginBottom: 14 }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: done ? "#22c55e" : "#14b8a6", borderRadius: 99, transition: "width 0.8s ease" }} />
+                  </div>
+
+                  {/* Tips */}
+                  {tips.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {tips.map((tip, i) => (
+                        <div key={i} style={{ display: "flex", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, borderLeft: "2px solid rgba(20,184,166,0.4)" }}>
+                          <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+                          <span style={{ fontSize: 11, color: "var(--fg3)", lineHeight: 1.5 }}>{tip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {done && (
+                    <div style={{ padding: "10px 12px", background: "rgba(34,197,94,0.08)", borderRadius: 10, borderLeft: "2px solid #22c55e" }}>
+                      <span style={{ fontSize: 11, color: "var(--grn)", lineHeight: 1.5 }}>Emergency fund complete! Next milestone: ₱100,000. Increase monthly savings to ₱8,000+ to hit it in under a year.</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Cutoff cards */}
             <CutoffCard
