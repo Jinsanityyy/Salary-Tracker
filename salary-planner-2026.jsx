@@ -894,6 +894,16 @@ export default function App() {
     schedulePush();
   }, [savingsLog]);
 
+  useEffect(() => {
+    try { localStorage.setItem("extra_expenses_budget-first", JSON.stringify(budgetFirstExtras)); } catch {}
+    schedulePush();
+  }, [budgetFirstExtras]);
+
+  useEffect(() => {
+    try { localStorage.setItem("extra_expenses_budget-second", JSON.stringify(budgetSecondExtras)); } catch {}
+    schedulePush();
+  }, [budgetSecondExtras]);
+
   // ── Cloud Sync (Supabase) ──────────────────────────────────────────────────
   const [syncId, setSyncId] = useState(() => {
     let id = localStorage.getItem("salary_sync_id");
@@ -911,8 +921,8 @@ export default function App() {
       actuals:     Object.fromEntries(Object.entries(actuals).filter(([, v]) => !v.locked)),
       budgetTasks,
       savingsLog,
-      extraFirst:  JSON.parse(localStorage.getItem("extra_expenses_budget-first")  || "[]"),
-      extraSecond: JSON.parse(localStorage.getItem("extra_expenses_budget-second") || "[]"),
+      extraFirst:  budgetFirstExtras,
+      extraSecond: budgetSecondExtras,
     };
   }
 
