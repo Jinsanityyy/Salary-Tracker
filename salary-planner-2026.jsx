@@ -172,7 +172,7 @@ const NAV_TABS = [
   {
     key: "timeline", label: "Timeline",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
         <line x1="8" y1="18" x2="21" y2="18"/>
         <circle cx="3" cy="6" r="0.8" fill="currentColor"/><circle cx="3" cy="12" r="0.8" fill="currentColor"/>
@@ -183,7 +183,7 @@ const NAV_TABS = [
   {
     key: "monthly summary", label: "Monthly",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
         <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
       </svg>
@@ -192,7 +192,7 @@ const NAV_TABS = [
   {
     key: "budget", label: "Budget",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
         <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
         <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
@@ -200,9 +200,19 @@ const NAV_TABS = [
     ),
   },
   {
+    key: "savings", label: "Savings",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2z"/>
+        <path d="M2 9v1a2 2 0 0 0 2 2h1"/>
+        <path d="M16 11h0"/>
+      </svg>
+    ),
+  },
+  {
     key: "food", label: "Food",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/>
         <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
       </svg>
@@ -211,7 +221,7 @@ const NAV_TABS = [
   {
     key: "30-day plan", label: "Tasks",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 11l3 3L22 4"/>
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
       </svg>
@@ -313,7 +323,7 @@ function Chevron({ open }) {
   );
 }
 
-function CutoffCard({ title, income, items, carryOver, cardKey }) {
+function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }) {
   const [extras, setExtras] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`extra_expenses_${cardKey}`) || "[]"); }
     catch { return []; }
@@ -329,11 +339,13 @@ function CutoffCard({ title, income, items, carryOver, cardKey }) {
     setExtras(updated);
     localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
     setNewLabel(""); setNewAmt(""); setShowAdd(false);
+    if (onExtrasChange) onExtrasChange(updated);
   }
   function removeExtra(i) {
     const updated = extras.filter((_, idx) => idx !== i);
     setExtras(updated);
     localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
+    if (onExtrasChange) onExtrasChange(updated);
   }
 
   const billItems    = [...items.filter(i => ["fixed","debt","variable"].includes(i.type)), ...extras];
@@ -475,6 +487,19 @@ export default function App() {
   });
   const [activeWeek, setActiveWeek] = useState(1);
 
+  const [budgetFirstExtras, setBudgetFirstExtras] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("extra_expenses_budget-first") || "[]"); }
+    catch { return []; }
+  });
+
+  const [savingsLog, setSavingsLog] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("savings_log_v1") || "[]"); }
+    catch { return []; }
+  });
+  const [showAddSavings, setShowAddSavings] = useState(false);
+  const [newSavingsLabel, setNewSavingsLabel] = useState("");
+  const [newSavingsAmt, setNewSavingsAmt]     = useState("");
+
   // Accordion: collapse all fully-past months, expand months with upcoming cycles
   const [collapsedMonths, setCollapsedMonths] = useState(() => {
     const state = {};
@@ -496,6 +521,10 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem("budget_tasks_v1", JSON.stringify(budgetTasks)); } catch {}
   }, [budgetTasks]);
+
+  useEffect(() => {
+    try { localStorage.setItem("savings_log_v1", JSON.stringify(savingsLog)); } catch {}
+  }, [savingsLog]);
 
   const effectiveFx = useCustomFx && parseFloat(customFx) > 0 ? parseFloat(customFx) : LIVE_FX;
   const nextPayKey  = ALL_CYCLES.find(c => c.paidDate >= TODAY)?.key;
@@ -655,7 +684,7 @@ export default function App() {
   const budgetMonthly      = budgetFirstIncome + budgetSecondIncome;
   const firstItems         = budgetFirst?.type  === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const secondItems        = budgetSecond?.type === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
-  const firstTotalSpend    = firstItems.reduce((a, b) => a + b.amount, 0);
+  const firstTotalSpend    = [...firstItems, ...budgetFirstExtras].reduce((a, b) => a + b.amount, 0);
   const dynamicCarryOver   = Math.max(0, budgetFirstIncome - firstTotalSpend);
 
   const completedTasks = budgetTasks.filter(t => t.done).length;
@@ -1133,7 +1162,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
               income={budgetFirstIncome} items={firstItems} carryOver={null}
-              cardKey="budget-first"
+              cardKey="budget-first" onExtrasChange={setBudgetFirstExtras}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#475569", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
@@ -1207,6 +1236,167 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* ════ SAVINGS ════ */}
+        {tab === "savings" && (() => {
+          const GOAL          = 1_000_000;
+          const totalSaved    = savingsLog.reduce((a, e) => a + e.amount, 0);
+          const pct           = Math.min((totalSaved / GOAL) * 100, 100);
+          const remaining     = Math.max(0, GOAL - totalSaved);
+          const monthlyRate   = BUDGET_DATA.savings.monthly;
+          const monthsLeft    = remaining > 0 ? Math.ceil(remaining / monthlyRate) : 0;
+          const yearsLeft     = Math.floor(monthsLeft / 12);
+          const moRemainder   = monthsLeft % 12;
+
+          const MILESTONES = [
+            { label: "Emergency Fund",  amount: 19500,   icon: "🛡" },
+            { label: "100K Club",       amount: 100000,  icon: "💯" },
+            { label: "Quarter Million", amount: 250000,  icon: "📈" },
+            { label: "Half Million",    amount: 500000,  icon: "🔥" },
+            { label: "750K",            amount: 750000,  icon: "⚡" },
+            { label: "THE GOAL — 1M",   amount: 1000000, icon: "🏆" },
+          ];
+
+          function addSavingsEntry() {
+            const amt = parseFloat(newSavingsAmt);
+            if (!newSavingsLabel.trim() || !amt || amt <= 0) return;
+            const entry = {
+              id: Date.now(),
+              date: TODAY.toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" }),
+              label: newSavingsLabel.trim(),
+              amount: amt,
+            };
+            setSavingsLog(prev => [entry, ...prev]);
+            setNewSavingsLabel(""); setNewSavingsAmt(""); setShowAddSavings(false);
+          }
+
+          function deleteSavingsEntry(id) {
+            setSavingsLog(prev => prev.filter(e => e.id !== id));
+          }
+
+          return (
+            <div className="fu" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* Hero: goal + progress */}
+              <div style={{ background: "linear-gradient(145deg, rgba(16,185,129,0.1), rgba(99,102,241,0.08))", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 20, padding: "22px 18px" }}>
+                <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Savings Goal</div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 800, color: "#6ee7b7", marginBottom: 2 }}>₱1,000,000</div>
+                <div style={{ fontSize: 12, color: "#475569", marginBottom: 18 }}>isang milyong piso</div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>NAIIPON</div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#6ee7b7", fontWeight: 700 }}>₱{totalSaved.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{pct.toFixed(2)}% ng goal</div>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px" }}>
+                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 4 }}>KULANG PA</div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, color: "#a5b4fc", fontWeight: 700 }}>₱{remaining.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>
+                      {monthsLeft > 0
+                        ? yearsLeft > 0
+                          ? `~${yearsLeft}y ${moRemainder > 0 ? moRemainder + "mo" : ""}`
+                          : `~${monthsLeft} months`
+                        : "GOAL REACHED!"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Big progress bar */}
+                <div style={{ height: 10, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden", marginBottom: 6 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99,
+                    background: "linear-gradient(90deg, #10b981, #6ee7b7)",
+                    boxShadow: "0 0 12px #10b98166",
+                    transition: "width 1.4s cubic-bezier(0.4,0,0.2,1)" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#475569" }}>
+                  <span>₱0</span>
+                  <span style={{ color: "#64748b" }}>₱{monthlyRate.toLocaleString()}/mo × {monthsLeft} months</span>
+                  <span>₱1M</span>
+                </div>
+              </div>
+
+              {/* Milestones */}
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "16px 18px" }}>
+                <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>Milestones</div>
+                {MILESTONES.map((m, i) => {
+                  const reached  = totalSaved >= m.amount;
+                  const mPct     = Math.min((totalSaved / m.amount) * 100, 100);
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 14,
+                      marginBottom: i < MILESTONES.length - 1 ? 14 : 0,
+                      borderBottom: i < MILESTONES.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                      <div style={{ fontSize: 20, width: 28, textAlign: "center", opacity: reached ? 1 : 0.35 }}>{m.icon}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                          <span style={{ fontSize: 13, color: reached ? "#e2e8f0" : "#64748b", fontWeight: reached ? 600 : 400 }}>{m.label}</span>
+                          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: reached ? "#6ee7b7" : "#475569" }}>
+                            {reached ? "✓ Done" : `₱${m.amount.toLocaleString()}`}
+                          </span>
+                        </div>
+                        <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${mPct}%`, background: reached ? "#10b981" : "#6366f1", borderRadius: 99 }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Log entry form */}
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "16px 18px" }}>
+                <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>I-Log ang Savings</div>
+
+                {showAddSavings ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <input placeholder="Para saan? (e.g. May C2 savings)"
+                      value={newSavingsLabel} onChange={e => setNewSavingsLabel(e.target.value)}
+                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", width: "100%" }} />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input placeholder="Halaga (₱)" type="number" inputMode="decimal"
+                        value={newSavingsAmt} onChange={e => setNewSavingsAmt(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && addSavingsEntry()}
+                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#e2e8f0", outline: "none", flex: 1, fontFamily: "'DM Mono', monospace" }} />
+                      <button onClick={addSavingsEntry}
+                        style={{ background: "rgba(16,185,129,0.18)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 8, padding: "10px 18px", color: "#6ee7b7", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>Add</button>
+                      <button onClick={() => { setShowAddSavings(false); setNewSavingsLabel(""); setNewSavingsAmt(""); }}
+                        style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "10px 12px", color: "#64748b", fontSize: 13, cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowAddSavings(true)}
+                    style={{ background: "rgba(16,185,129,0.08)", border: "1px dashed rgba(16,185,129,0.3)", borderRadius: 10, padding: "12px 16px", color: "#10b981", fontSize: 13, cursor: "pointer", width: "100%", textAlign: "center", fontWeight: 500 }}>
+                    + Mag-log ng savings
+                  </button>
+                )}
+              </div>
+
+              {/* Savings log list */}
+              {savingsLog.length > 0 && (
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ padding: "14px 18px 10px", fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase" }}>History</div>
+                  {savingsLog.map((entry, i) => (
+                    <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px",
+                      borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, color: "#e2e8f0" }}>{entry.label}</div>
+                        <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{entry.date}</div>
+                      </div>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, color: "#6ee7b7", fontWeight: 600 }}>+₱{entry.amount.toLocaleString()}</div>
+                      <button onClick={() => deleteSavingsEntry(entry.id)}
+                        style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 15, padding: "0 0 0 4px" }}>×</button>
+                    </div>
+                  ))}
+                  <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 12, color: "#64748b" }}>{savingsLog.length} entries</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "#6ee7b7", fontWeight: 600 }}>₱{totalSaved.toLocaleString()} total</span>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        })()}
 
         {/* ════ FOOD ════ */}
         {tab === "food" && (
