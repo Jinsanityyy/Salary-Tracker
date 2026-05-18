@@ -60,8 +60,8 @@ function buildCycles() {
       paidDate   = new Date(eY, eM, 20);
     }
     if (paidDate > new Date(2026, 11, 31)) continue;
-    const days      = DAYS_OVERRIDE[key] ?? workdaysBetween(cycleStart, cycleEnd);
     const key       = `${y}-${m}-${type}`;
+    const days      = DAYS_OVERRIDE[key] ?? workdaysBetween(cycleStart, cycleEnd);
     const startStr  = cycleStart.toLocaleDateString("en", { month: "short", day: "numeric" });
     const endStr    = cycleEnd.toLocaleDateString("en",   { month: "short", day: "numeric" });
     const paidLabel = paidDate.toLocaleDateString("en",   { month: "short", day: "numeric" });
