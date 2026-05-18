@@ -802,6 +802,10 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("extra_expenses_budget-first") || "[]"); }
     catch { return []; }
   });
+  const [budgetSecondExtras, setBudgetSecondExtras] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("extra_expenses_budget-second") || "[]"); }
+    catch { return []; }
+  });
 
   const [savingsLog, setSavingsLog] = useState(() => {
     try { return JSON.parse(localStorage.getItem("savings_log_v1") || "[]"); }
@@ -867,7 +871,7 @@ export default function App() {
     if (p.budgetTasks) setBudgetTasks(p.budgetTasks);
     if (p.savingsLog)  setSavingsLog(p.savingsLog);
     if (p.extraFirst)  { setBudgetFirstExtras(p.extraFirst); localStorage.setItem("extra_expenses_budget-first",  JSON.stringify(p.extraFirst)); }
-    if (p.extraSecond) { localStorage.setItem("extra_expenses_budget-second", JSON.stringify(p.extraSecond)); }
+    if (p.extraSecond) { setBudgetSecondExtras(p.extraSecond); localStorage.setItem("extra_expenses_budget-second", JSON.stringify(p.extraSecond)); }
   }
 
   async function pushToCloud(id) {
@@ -1644,7 +1648,7 @@ export default function App() {
               const firstSavingsHidden  = firstItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
               const secondSavingsHidden = secondItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
               const firstPocket  = budgetFirstIncome  - firstItems.reduce((a,b) => a + b.amount, 0) - budgetFirstExtras.reduce((a,b) => a + b.amount, 0);
-              const secondPocket = budgetSecondIncome - secondItems.reduce((a,b) => a + b.amount, 0);
+              const secondPocket = budgetSecondIncome - secondItems.reduce((a,b) => a + b.amount, 0) - budgetSecondExtras.reduce((a,b) => a + b.amount, 0);
               const totalPocket  = firstPocket + secondPocket;
 
               // Tips
@@ -1722,7 +1726,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
               income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
-              cardKey="budget-second"
+              cardKey="budget-second" onExtrasChange={setBudgetSecondExtras}
             />
 
             {/* CC Debt Breakdown */}
