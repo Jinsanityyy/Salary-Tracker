@@ -480,11 +480,7 @@ function Chevron({ open }) {
   );
 }
 
-function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }) {
-  const [extras, setExtras] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(`extra_expenses_${cardKey}`) || "[]"); }
-    catch { return []; }
-  });
+function CutoffCard({ title, income, items, carryOver, cardKey, extras = [], onExtrasChange }) {
   const [hiddenBase, setHiddenBase] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`hidden_base_${cardKey}`) || "[]"); }
     catch { return []; }
@@ -492,6 +488,13 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
   const [showAdd, setShowAdd]   = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newAmt, setNewAmt]     = useState("");
+  const [cashExpenses, setCashExpenses] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`cash_exp_${cardKey}`) || "[]"); }
+    catch { return []; }
+  });
+  const [showAddCash, setShowAddCash]   = useState(false);
+  const [newCashLabel, setNewCashLabel] = useState("");
+  const [newCashAmt, setNewCashAmt]     = useState("");
 
   function hideBaseItem(label) {
     const updated = [...hiddenBase, label];
@@ -529,16 +532,27 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
     const amt = parseFloat(newAmt);
     if (!newLabel.trim() || !amt || amt <= 0) return;
     const updated = [...extras, { label: newLabel.trim(), amount: amt }];
-    setExtras(updated);
     localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
     setNewLabel(""); setNewAmt(""); setShowAdd(false);
     if (onExtrasChange) onExtrasChange(updated);
   }
   function removeExtra(i) {
     const updated = extras.filter((_, idx) => idx !== i);
-    setExtras(updated);
     localStorage.setItem(`extra_expenses_${cardKey}`, JSON.stringify(updated));
     if (onExtrasChange) onExtrasChange(updated);
+  }
+  function addCashExp() {
+    const amt = parseFloat(newCashAmt);
+    if (!newCashLabel.trim() || !amt || amt <= 0) return;
+    const updated = [...cashExpenses, { label: newCashLabel.trim(), amount: amt }];
+    setCashExpenses(updated);
+    localStorage.setItem(`cash_exp_${cardKey}`, JSON.stringify(updated));
+    setNewCashLabel(""); setNewCashAmt(""); setShowAddCash(false);
+  }
+  function removeCashExp(i) {
+    const updated = cashExpenses.filter((_, idx) => idx !== i);
+    setCashExpenses(updated);
+    localStorage.setItem(`cash_exp_${cardKey}`, JSON.stringify(updated));
   }
 
   const visibleItems = items.filter(i => !hiddenBase.includes(i.label));
@@ -712,20 +726,56 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
           )}
 
           {/* Cash bucket */}
-          {cashRxTotal > 0 && (
-            <div style={{ padding: "12px 18px", background: "rgba(34,197,94,0.04)", borderTop: "1px solid rgba(34,197,94,0.1)" }}>
-              <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, marginBottom: 8 }}>Cash in Hand</div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)", marginBottom: 8 }}>
-                <span>Cash received (partner share)</span>
-                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#22c55e" }}>+₱{cashRxTotal.toLocaleString()}</span>
+          {cashRxTotal > 0 && (() => {
+            const cashExpTotal = cashExpenses.reduce((a, b) => a + b.amount, 0);
+            const cashNet      = cashRxTotal - cashExpTotal;
+            return (
+              <div style={{ padding: "12px 18px", background: "rgba(34,197,94,0.04)", borderTop: "1px solid rgba(34,197,94,0.1)" }}>
+                <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, marginBottom: 8 }}>Cash in Hand</div>
+
+                {/* Received */}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)", marginBottom: 6 }}>
+                  <span>Cash received</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#22c55e" }}>+₱{cashRxTotal.toLocaleString()}</span>
+                </div>
+
+                {/* Cash expenses */}
+                {cashExpenses.map((exp, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--fg3)", marginBottom: 4 }}>
+                    <span style={{ flex: 1 }}>{exp.label}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#f87171" }}>−₱{exp.amount.toLocaleString()}</span>
+                    <button onClick={() => removeCashExp(i)} style={{ background: "none", border: "none", color: "var(--fg4)", cursor: "pointer", fontSize: 14, padding: "0 0 0 8px", lineHeight: 1 }}>×</button>
+                  </div>
+                ))}
+
+                {/* Add cash expense form */}
+                {showAddCash ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "8px 0" }}>
+                    <input placeholder="What did you spend on?" value={newCashLabel} onChange={e => setNewCashLabel(e.target.value)}
+                      style={{ background: "var(--bdr-sub)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "var(--fg)", outline: "none", width: "100%" }} />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input placeholder="Amount (₱)" type="number" inputMode="decimal" value={newCashAmt} onChange={e => setNewCashAmt(e.target.value)} onKeyDown={e => e.key === "Enter" && addCashExp()}
+                        style={{ background: "var(--bdr-sub)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "var(--fg)", outline: "none", flex: 1, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }} />
+                      <button onClick={addCashExp} style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.35)", borderRadius: 7, padding: "7px 14px", color: "#22c55e", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Add</button>
+                      <button onClick={() => { setShowAddCash(false); setNewCashLabel(""); setNewCashAmt(""); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "7px 10px", color: "var(--fg3)", fontSize: 12, cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowAddCash(true)} style={{ marginBottom: 8, background: "none", border: "1px dashed rgba(34,197,94,0.2)", borderRadius: 7, padding: "5px 10px", color: "#22c55e", fontSize: 11, cursor: "pointer", width: "100%" }}>
+                    + Add cash expense
+                  </button>
+                )}
+
+                {/* Net */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                  borderTop: "1px solid rgba(34,197,94,0.12)", paddingTop: 8 }}>
+                  <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: "0.04em", fontWeight: 600 }}>CASH IN HAND</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, fontWeight: 500,
+                    color: cashNet >= 0 ? "#22c55e" : "#f43f5e" }}>₱{cashNet.toLocaleString()}</span>
+                </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                borderTop: "1px solid rgba(34,197,94,0.12)", paddingTop: 8 }}>
-                <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: "0.04em", fontWeight: 600 }}>CASH IN HAND</span>
-                <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 20, fontWeight: 500, color: "#22c55e" }}>₱{cashRxTotal.toLocaleString()}</span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -1716,7 +1766,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
               income={budgetFirstIncome} items={firstItems} carryOver={null}
-              cardKey="budget-first" onExtrasChange={setBudgetFirstExtras}
+              cardKey="budget-first" extras={budgetFirstExtras} onExtrasChange={setBudgetFirstExtras}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--fg4)", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
@@ -1726,7 +1776,7 @@ export default function App() {
             <CutoffCard
               title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
               income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
-              cardKey="budget-second" onExtrasChange={setBudgetSecondExtras}
+              cardKey="budget-second" extras={budgetSecondExtras} onExtrasChange={setBudgetSecondExtras}
             />
 
             {/* CC Debt Breakdown */}
