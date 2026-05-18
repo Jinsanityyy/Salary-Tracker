@@ -550,10 +550,12 @@ function CutoffCard({ title, income, items, carryOver, cardKey, onExtrasChange }
   const flexTotal    = flexItems.reduce((a, b) => a + b.amount, 0);
   const savingsTotal = savingsItems.reduce((a, b) => a + b.amount, 0);
 
-  // Use actual income only — carry-over is estimated, not guaranteed
-  const afterBills   = income - billsTotal;
-  const afterFlex    = afterBills - flexTotal;
-  const inPocket     = afterFlex - savingsTotal;
+  // Items marked "cash received" are reimbursed by partner — net cost to you is ₱0
+  // Exclude them from expense totals so Pocket Money stays accurate
+  const isCashRx = label => paidItems[label] === "cash";
+  const afterBills = income - billItems.reduce((a, b) => a + (isCashRx(b.label) ? 0 : b.amount), 0);
+  const afterFlex  = afterBills - flexItems.reduce((a, b) => a + (isCashRx(b.label) ? 0 : b.amount), 0);
+  const inPocket   = afterFlex  - savingsItems.reduce((a, b) => a + (isCashRx(b.label) ? 0 : b.amount), 0);
 
   const allBudgetItems  = [...billItems, ...flexItems, ...savingsItems];
   const bankPaidTotal   = allBudgetItems.filter(i => paidItems[i.label] === "bank").reduce((a, b) => a + b.amount, 0);
