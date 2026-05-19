@@ -484,7 +484,7 @@ function Chevron({ open }) {
   );
 }
 
-function CutoffCard({ title, income, items, carryOver, cardKey, extras = [], onExtrasChange }) {
+function CutoffCard({ title, income, items, carryOver, cardKey, extras = [], onExtrasChange, palengkeDeduction = 0, palengkeCount = 0 }) {
   const [hiddenBase, setHiddenBase] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`hidden_base_${cardKey}`) || "[]"); }
     catch { return []; }
@@ -732,7 +732,7 @@ function CutoffCard({ title, income, items, carryOver, cardKey, extras = [], onE
           {/* Cash bucket */}
           {cashRxTotal > 0 && (() => {
             const cashExpTotal = cashExpenses.reduce((a, b) => a + b.amount, 0);
-            const cashNet      = cashRxTotal - cashExpTotal;
+            const cashNet      = cashRxTotal - cashExpTotal - palengkeDeduction;
             return (
               <div style={{ padding: "12px 18px", background: "rgba(34,197,94,0.04)", borderTop: "1px solid rgba(34,197,94,0.1)" }}>
                 <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, marginBottom: 8 }}>Cash in Hand</div>
@@ -743,7 +743,15 @@ function CutoffCard({ title, income, items, carryOver, cardKey, extras = [], onE
                   <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#22c55e" }}>+₱{cashRxTotal.toLocaleString()}</span>
                 </div>
 
-                {/* Cash expenses */}
+                {/* Palengke auto-deduction */}
+                {palengkeDeduction > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--fg3)", marginBottom: 4 }}>
+                    <span>🛒 Palengke ({palengkeCount} item{palengkeCount !== 1 ? "s" : ""} checked)</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "#f87171" }}>−₱{palengkeDeduction.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Manual cash expenses */}
                 {cashExpenses.map((exp, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--fg3)", marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>{exp.label}</span>
@@ -1144,6 +1152,14 @@ export default function App() {
   const secondItems        = budgetSecond?.type === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const firstTotalSpend    = [...firstItems, ...budgetFirstExtras].reduce((a, b) => a + b.amount, 0);
   const dynamicCarryOver   = Math.max(0, budgetFirstIncome - firstTotalSpend);
+
+  const palengkeTotal = PALENGKE_SECTIONS.reduce((tot, sec) =>
+    tot + sec.items.reduce((sub, item) => {
+      const key = `${sec.id}-${item.name}`;
+      return sub + (palengkeChecked[key] ? (palengkeActuals[key] ?? item.price) : 0);
+    }, 0), 0);
+  const palengkeCheckedCount = PALENGKE_SECTIONS.reduce((tot, sec) =>
+    tot + sec.items.filter(item => palengkeChecked[`${sec.id}-${item.name}`]).length, 0);
 
   const completedTasks = budgetTasks.filter(t => t.done).length;
   const weekTasks      = budgetTasks.map((t, i) => ({ ...t, idx: i })).filter(t => t.week === activeWeek);
@@ -1781,6 +1797,7 @@ export default function App() {
               title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
               income={budgetFirstIncome} items={firstItems} carryOver={null}
               cardKey="budget-first" extras={budgetFirstExtras} onExtrasChange={setBudgetFirstExtras}
+              palengkeDeduction={palengkeTotal} palengkeCount={palengkeCheckedCount}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--fg4)", fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
@@ -1791,6 +1808,7 @@ export default function App() {
               title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
               income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
               cardKey="budget-second" extras={budgetSecondExtras} onExtrasChange={setBudgetSecondExtras}
+              palengkeDeduction={palengkeTotal} palengkeCount={palengkeCheckedCount}
             />
 
             {/* CC Debt Breakdown */}
