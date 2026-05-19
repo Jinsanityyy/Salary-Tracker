@@ -222,8 +222,13 @@ const PALENGKE_SECTIONS = [
       { name: "Bigas (sinandomeng/dinorado)", qty: "5kg",     price: 270, tip: "Bumili sa sako para mas mura",          sub: "Singgamas o red rice kung health-focused" },
       { name: "Canola oil",                  qty: "500ml",    price: 90,  tip: "Mas healthy kaysa vegetable oil",       sub: "Coconut oil — mas mahal pero mas healthy" },
       { name: "Toyo, suka, patis",           qty: "set",      price: 70,  tip: "Goya o Datu Puti",                     sub: "Low-sodium soy sauce kung may hypertension" },
-      { name: "Bawang, sibuyas, luya",       qty: "bundle",   price: 50,  tip: "Laging mahalaga sa lutuin",            sub: null },
+      { name: "Bawang puti (white)",         qty: "1 head",   price: 20,  tip: "Para sa karamihan ng lutuin — mas maanghang", sub: "Bawang pula — mas malambot ang lasa" },
+      { name: "Bawang pula (purple)",        qty: "1 head",   price: 15,  tip: "Mas matamis, mas sikat sa ensalada",   sub: "Bawang puti — mas maanghang" },
+      { name: "Sibuyas",                     qty: "¼kg",      price: 25,  tip: "Laging nasa bahay — base ng halos lahat ng ulam", sub: "Sibuyas Tagalog (red) — mas matamis pag hilaw" },
+      { name: "Sili (finger chili)",         qty: "¼kg",      price: 30,  tip: "Dagdag sa sinigang, adobo, sawsawan",  sub: "Siling labuyo — mas maanghang, konti lang kailangan" },
+      { name: "Luya",                        qty: "100g",     price: 15,  tip: "Anti-inflammatory — tinola, sinigang, tea", sub: null },
       { name: "Asin, paminta, bay leaf",     qty: "set",      price: 30,  tip: "Pantaon",                              sub: null },
+      { name: "Wheat bread",                 qty: "1 loaf",   price: 65,  tip: "Gardenia o SunBread — mas healthy kaysa tasty bread", sub: "Oatmeal bread — mas high fiber, halos same price" },
     ],
   },
   {
@@ -263,7 +268,6 @@ const PALENGKE_SECTIONS = [
       { name: "Malunggay (moringa)",        qty: "2 bundles",price: 20, tip: "Supernutrient — libre kung may kapitbahay!",     sub: null },
       { name: "Pechay Baguio",             qty: "1 head",   price: 35, tip: "Mas malaking dahon, mas matamis",                sub: "Repolyo — same family, mas affordable" },
       { name: "Kalamansi",                 qty: "¼kg",      price: 25, tip: "Vitamin C, pampaganda ng luto at sawsaw",        sub: "Lemon — mas mahal pero mas concentrated" },
-      { name: "Luya (extra)",              qty: "100g",      price: 15, tip: "Anti-inflammatory — dagdag sa tinola at sinigang",sub: null },
     ],
   },
 ];
