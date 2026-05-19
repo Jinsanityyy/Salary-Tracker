@@ -841,7 +841,15 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("palengke_actuals_v1") || "{}"); } catch { return {}; }
   });
   const [palengkeLogs, setPalengkeLogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("palengke_logs_v1") || "[]"); } catch { return []; }
+    try {
+      const raw = JSON.parse(localStorage.getItem("palengke_logs_v1") || "[]");
+      const seen = new Set();
+      return raw.filter(e => {
+        const key = `${e.date}-${e.estimated}-${e.actual}`;
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+    } catch { return []; }
   });
   const [shoppingMode, setShoppingMode]   = useState(false);
   const [actualMode, setActualMode]       = useState(false);
@@ -854,7 +862,10 @@ export default function App() {
     localStorage.setItem("palengke_actuals_v1", JSON.stringify(updated));
   }
   function saveTrip(estimated, actual) {
-    const entry = { id: Date.now(), date: new Date().toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" }), estimated, actual };
+    const date = new Date().toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
+    const isDup = palengkeLogs.some(e => e.date === date && e.estimated === estimated && e.actual === actual);
+    if (isDup) return;
+    const entry = { id: Date.now(), date, estimated, actual };
     const updated = [entry, ...palengkeLogs].slice(0, 20);
     setPalengkeLogs(updated);
     localStorage.setItem("palengke_logs_v1", JSON.stringify(updated));
@@ -2255,6 +2266,11 @@ export default function App() {
           }, 0), 0);
           const pRemaining  = PALENGKE_BUDGET - pTotal;
           const pCheckedAmt = PALENGKE_SECTIONS.reduce((s, sec) => s + sec.items.filter(i => palengkeChecked[`${sec.id}-${i.name}`]).reduce((a, i) => a + i.price, 0), 0);
+          const pCheckedActual = PALENGKE_SECTIONS.reduce((s, sec) => s + sec.items.reduce((a, i) => {
+            const key = `${sec.id}-${i.name}`;
+            if (!palengkeChecked[key]) return a;
+            return a + (palengkeActuals[key] || i.price);
+          }, 0), 0);
           const activeData  = PALENGKE_SECTIONS.find(s => s.id === palengkeSection);
 
           return (
@@ -2366,7 +2382,7 @@ export default function App() {
                           ₱{Math.abs(pActualTotal - pTotal)}
                         </span>
                       </div>
-                      <button className="btn" onClick={() => saveTrip(pTotal, pActualTotal)} style={{ marginTop: 10, width: "100%", background: "rgba(163,230,53,0.1)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: 8, padding: "8px", fontSize: 11, color: "#a3e635" }}>
+                      <button className="btn" onClick={() => saveTrip(pCheckedAmt, pCheckedActual)} style={{ marginTop: 10, width: "100%", background: "rgba(163,230,53,0.1)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: 8, padding: "8px", fontSize: 11, color: "#a3e635" }}>
                         💾 Save this trip to history
                       </button>
                     </div>
