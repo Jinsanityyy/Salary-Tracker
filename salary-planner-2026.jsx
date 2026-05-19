@@ -116,7 +116,7 @@ const BUDGET_DATA = {
       { label: "Electricity + Water", amount: 2000, type: "fixed" },
       { label: "Credit-To-Cash 5",    amount: 8923, type: "debt" },
       { label: "Netflix",             amount: 619,  type: "fixed" },
-      { label: "Claude AI",           amount: 1277, type: "fixed" },
+      { label: "Claude AI",           amount: 1383, type: "fixed" },
       { label: "Food / Misc",         amount: 2500, type: "variable" },
       { label: "Personal Allowance",  amount: 1000, type: "flex" },
       { label: "Savings Transfer",    amount: 5500, type: "savings" },
