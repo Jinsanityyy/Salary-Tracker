@@ -1382,7 +1382,7 @@ export default function App() {
             {[
               { label: "Year Gross",   val: php(totalPhp + extraIncomeTotalPhp), sub: extraIncomeTotalPhp > 0 ? `${totalCycles} cycles + Hoku` : `${totalCycles} cycles`, color: "var(--blue)" },
               { label: "Confirmed",    val: php(confirmedPhp),  sub: `${confirmedCount} confirmed`, color: "var(--teal)" },
-              { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} remaining`, color: "var(--amr)" },
+              { label: "Estimated",    val: php(estimatedPhp + extraIncomeTotalPhp), sub: extraIncomeTotalPhp > 0 ? `${totalCycles - confirmedCount} remaining + Hoku` : `${totalCycles - confirmedCount} remaining`, color: "var(--amr)" },
               { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#14b8a6" },
             ].map((s, i) => (
               <div key={i} style={{ background: "var(--surface)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "11px 10px" }}>
