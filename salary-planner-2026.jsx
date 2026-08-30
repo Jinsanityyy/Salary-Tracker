@@ -1380,7 +1380,7 @@ export default function App() {
           {/* Stat cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
             {[
-              { label: "Year Gross",   val: php(totalPhp),      sub: `${totalCycles} cycles`,       color: "var(--blue)" },
+              { label: "Year Gross",   val: php(totalPhp + extraIncomeTotalPhp), sub: extraIncomeTotalPhp > 0 ? `${totalCycles} cycles + Hoku` : `${totalCycles} cycles`, color: "var(--blue)" },
               { label: "Confirmed",    val: php(confirmedPhp),  sub: `${confirmedCount} confirmed`, color: "var(--teal)" },
               { label: "Estimated",    val: php(estimatedPhp),  sub: `${totalCycles - confirmedCount} remaining`, color: "var(--amr)" },
               { label: "Per day",      val: php(CLIENT_RATE * HOURS * effectiveFx), sub: usd(CLIENT_RATE * HOURS), color: "#14b8a6" },
@@ -1719,11 +1719,11 @@ export default function App() {
             })}
             <div style={{ background: "rgba(59,130,246,.07)", border: "1px solid rgba(59,130,246,.2)", borderRadius: 14, padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 9, color: "#3b82f6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>2026 Total Gross</div>
-                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: "var(--blue)", fontWeight: 500, letterSpacing: "-0.02em" }}><AnimNum value={totalPhp} /></div>
+                <div style={{ fontSize: 9, color: "#3b82f6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>2026 Total Gross{extraIncomeTotalPhp > 0 ? " (incl. Hoku)" : ""}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: "var(--blue)", fontWeight: 500, letterSpacing: "-0.02em" }}><AnimNum value={totalPhp + extraIncomeTotalPhp} /></div>
                 <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 3 }}>{php(confirmedPhp)} confirmed · {php(estimatedPhp)} estimated</div>
                 {extraIncomeTotalPhp > 0 && (
-                  <div style={{ fontSize: 10, color: "#a855f7", marginTop: 3 }}>+ {php(extraIncomeTotalPhp)} Hoku (direct client, separate)</div>
+                  <div style={{ fontSize: 10, color: "#a855f7", marginTop: 3 }}>+ {php(extraIncomeTotalPhp)} Hoku (direct client)</div>
                 )}
               </div>
               <div style={{ textAlign: "right" }}>
