@@ -99,7 +99,7 @@ const LOCKED_PAYSLIPS = {};
 
 // ─── Extra recurring income — kept separate from the payslip cycle system ────
 const EXTRA_INCOME_SOURCES = [
-  { id: "hoku", name: "Hoku", note: "Direct Client", amountUsd: 800, payDay: 1 },
+  { id: "hoku", name: "Hoku", note: "Direct Client", amountUsd: 800, payDay: 1, startYear: 2026, startMonth: 8 /* Sep 2026 (0-indexed) — first payout after starting late Aug 2026 */ },
 ];
 
 // ─── Financial Recovery Data ──────────────────────────────────────────────────
@@ -1142,22 +1142,31 @@ export default function App() {
     byMonth[mk].totalUsd += d.usd;
   });
   // Recurring income (e.g. direct-client retainers) — separate from payslip cycles,
-  // but still counted into each month's total shown on the Monthly tab.
-  EXTRA_INCOME_SOURCES.forEach(src => {
-    for (let m = 0; m <= 11; m++) {
-      const mk      = `2026-${m}`;
-      const payDate = new Date(2026, m, src.payDay);
-      const itemPhp = src.amountUsd * effectiveFx;
-      if (!byMonth[mk]) byMonth[mk] = { label: payDate.toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], extraItems: [], totalPhp: 0, totalUsd: 0 };
-      byMonth[mk].extraItems.push({
-        id: `${src.id}-${m}`, name: src.name, note: src.note,
-        payLabel: payDate.toLocaleDateString("en", { month: "short", day: "numeric" }),
-        php: itemPhp, usd: src.amountUsd,
+  // but still counted into each month's total shown on the Monthly tab. Only
+  // generated from each source's own start month onward.
+  function getExtraIncomeForMonth(y, m) {
+    return EXTRA_INCOME_SOURCES
+      .filter(src => y > src.startYear || (y === src.startYear && m >= src.startMonth))
+      .map(src => {
+        const payDate = new Date(y, m, src.payDay);
+        return {
+          id: `${src.id}-${y}-${m}`, name: src.name, note: src.note,
+          payLabel: payDate.toLocaleDateString("en", { month: "short", day: "numeric" }),
+          php: src.amountUsd * effectiveFx, usd: src.amountUsd,
+        };
       });
-      byMonth[mk].totalPhp += itemPhp;
-      byMonth[mk].totalUsd += src.amountUsd;
-    }
-  });
+  }
+  for (let m = 0; m <= 11; m++) {
+    const mk    = `2026-${m}`;
+    const items = getExtraIncomeForMonth(2026, m);
+    if (!items.length) continue;
+    if (!byMonth[mk]) byMonth[mk] = { label: new Date(2026, m, 1).toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], extraItems: [], totalPhp: 0, totalUsd: 0 };
+    items.forEach(item => {
+      byMonth[mk].extraItems.push(item);
+      byMonth[mk].totalPhp += item.php;
+      byMonth[mk].totalUsd += item.usd;
+    });
+  }
   const extraIncomeTotalPhp = Object.values(byMonth).reduce((a, m) => a + m.extraItems.reduce((s, i) => s + i.php, 0), 0);
   const maxMonthPhp = Math.max(...Object.values(byMonth).map(m => m.totalPhp));
 
@@ -1166,7 +1175,7 @@ export default function App() {
     const map = new Map();
     ALL_CYCLES.forEach(cycle => {
       const mk = `${cycle.paidYear}-${cycle.paidMonth}`;
-      if (!map.has(mk)) map.set(mk, { mk, label: cycle.paidDate.toLocaleDateString("en", { month: "long", year: "numeric" }), entries: [] });
+      if (!map.has(mk)) map.set(mk, { mk, label: cycle.paidDate.toLocaleDateString("en", { month: "long", year: "numeric" }), entries: [], extraItems: getExtraIncomeForMonth(cycle.paidYear, cycle.paidMonth) });
       const d      = getCycleData(cycle);
       const isNext = cycle.key === nextPayKey;
       map.get(mk).entries.push({ cycle, d, isNext });
@@ -1400,7 +1409,7 @@ export default function App() {
                 const isCollapsed = !!collapsedMonths[group.mk];
                 const hasActual   = group.entries.some(e => e.d.isActual || e.d.isLocked);
                 const hasCurrent  = group.entries.some(e => e.isNext);
-                const totalGrpPhp = group.entries.reduce((s, e) => s + e.d.php, 0);
+                const totalGrpPhp = group.entries.reduce((s, e) => s + e.d.php, 0) + group.extraItems.reduce((s, i) => s + i.php, 0);
                 const actualCount = group.entries.filter(e => e.d.isActual || e.d.isLocked).length;
 
                 return (
@@ -1619,6 +1628,22 @@ export default function App() {
                             </div>
                           );
                         })}
+                        {group.extraItems.map(item => (
+                          <div key={item.id} style={{ background: "rgba(168,85,247,.06)", border: "1px solid rgba(168,85,247,.22)", borderRadius: 14, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div>
+                              <div style={{ fontSize: 13, color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}>{item.note}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 11, color: "var(--fg2)" }}>Paid {item.payLabel}</span>
+                                <span style={{ color: "var(--fg4)", fontSize: 10 }}>·</span>
+                                <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 20, background: "rgba(168,85,247,.15)", color: "#a855f7", letterSpacing: .5, textTransform: "uppercase" }}>{item.name}</span>
+                              </div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, fontWeight: 600, color: "#a855f7" }}>{php(item.php)}</div>
+                              <div style={{ fontSize: 10, color: "var(--fg3)" }}>{usd(item.usd)}</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
