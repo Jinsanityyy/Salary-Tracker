@@ -99,7 +99,11 @@ const LOCKED_PAYSLIPS = {};
 
 // ─── Extra recurring income — kept separate from the payslip cycle system ────
 const EXTRA_INCOME_SOURCES = [
-  { id: "hoku", name: "Hoku", note: "Direct Client", amountUsd: 800, payDay: 1, startYear: 2026, startMonth: 8 /* Sep 2026 (0-indexed) — first payout after starting late Aug 2026 */ },
+  {
+    id: "hoku", name: "Hoku", note: "Direct Client", amountUsd: 800, payDay: 1,
+    startYear: 2026, startMonth: 8, // Sep 2026 (0-indexed) — first payout after starting late Aug 2026
+    overrides: { "2026-8": 335 }, // first payout is prorated (started mid/late Aug); full $800 from Oct 1 on
+  },
 ];
 
 // ─── Financial Recovery Data ──────────────────────────────────────────────────
@@ -1149,10 +1153,11 @@ export default function App() {
       .filter(src => y > src.startYear || (y === src.startYear && m >= src.startMonth))
       .map(src => {
         const payDate = new Date(y, m, src.payDay);
+        const amount  = src.overrides?.[`${y}-${m}`] ?? src.amountUsd;
         return {
           id: `${src.id}-${y}-${m}`, name: src.name, note: src.note,
           payLabel: payDate.toLocaleDateString("en", { month: "short", day: "numeric" }),
-          php: src.amountUsd * effectiveFx, usd: src.amountUsd,
+          php: amount * effectiveFx, usd: amount,
         };
       });
   }
