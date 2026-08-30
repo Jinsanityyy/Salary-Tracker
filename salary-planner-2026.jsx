@@ -169,7 +169,7 @@ const TYPE_COLORS = {
 const TYPE_LABELS = { fixed: "Fixed", variable: "Variable", flex: "Flex", savings: "Savings", debt: "Debt" };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const TODAY = new Date(2026, 4, 18);
+const TODAY = new Date();
 const php   = n => "₱" + Math.round(n).toLocaleString();
 const usd   = n => "$" + Number(n).toFixed(2);
 
