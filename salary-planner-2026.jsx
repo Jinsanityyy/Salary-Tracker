@@ -97,6 +97,11 @@ function buildCycles() {
 const ALL_CYCLES    = buildCycles();
 const LOCKED_PAYSLIPS = {};
 
+// ─── Extra recurring income — kept separate from the payslip cycle system ────
+const EXTRA_INCOME_SOURCES = [
+  { id: "hoku", name: "Hoku", note: "Direct Client", amountUsd: 800, payDay: 1 },
+];
+
 // ─── Financial Recovery Data ──────────────────────────────────────────────────
 const BUDGET_DATA = {
   income: { c1: 28500, c2: 28500, monthly: 57000 },
@@ -1130,12 +1135,30 @@ export default function App() {
   const byMonth = {};
   ALL_CYCLES.forEach(c => {
     const mk = `${c.paidYear}-${c.paidMonth}`;
-    if (!byMonth[mk]) byMonth[mk] = { label: c.paidDate.toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], totalPhp: 0, totalUsd: 0 };
+    if (!byMonth[mk]) byMonth[mk] = { label: c.paidDate.toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], extraItems: [], totalPhp: 0, totalUsd: 0 };
     const d = getCycleData(c);
     byMonth[mk].cycles.push({ ...c, ...d });
     byMonth[mk].totalPhp += d.php;
     byMonth[mk].totalUsd += d.usd;
   });
+  // Recurring income (e.g. direct-client retainers) — separate from payslip cycles,
+  // but still counted into each month's total shown on the Monthly tab.
+  EXTRA_INCOME_SOURCES.forEach(src => {
+    for (let m = 0; m <= 11; m++) {
+      const mk      = `2026-${m}`;
+      const payDate = new Date(2026, m, src.payDay);
+      const itemPhp = src.amountUsd * effectiveFx;
+      if (!byMonth[mk]) byMonth[mk] = { label: payDate.toLocaleString("en", { month: "long", year: "numeric" }), cycles: [], extraItems: [], totalPhp: 0, totalUsd: 0 };
+      byMonth[mk].extraItems.push({
+        id: `${src.id}-${m}`, name: src.name, note: src.note,
+        payLabel: payDate.toLocaleDateString("en", { month: "short", day: "numeric" }),
+        php: itemPhp, usd: src.amountUsd,
+      });
+      byMonth[mk].totalPhp += itemPhp;
+      byMonth[mk].totalUsd += src.amountUsd;
+    }
+  });
+  const extraIncomeTotalPhp = Object.values(byMonth).reduce((a, m) => a + m.extraItems.reduce((s, i) => s + i.php, 0), 0);
   const maxMonthPhp = Math.max(...Object.values(byMonth).map(m => m.totalPhp));
 
   // Timeline accordion groups
@@ -1637,6 +1660,20 @@ export default function App() {
                       </div>
                     </div>
                   ))}
+                  {mo.extraItems.map((item, ei) => (
+                    <div key={item.id} style={{ padding: "10px 16px", borderTop: mo.cycles.length > 0 || ei > 0 ? "1px solid rgba(168,85,247,.15)" : "none", background: "rgba(168,85,247,.05)", display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: "var(--fg2)", marginBottom: 4 }}>{item.note} · Paid {item.payLabel}</div>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 20, background: "rgba(168,85,247,.15)", color: "#a855f7", letterSpacing: .5, textTransform: "uppercase" }}>{item.name}</span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 13, color: "#a855f7" }}>{php(item.php)}</div>
+                        <div style={{ fontSize: 9, color: "var(--fg3)" }}>{usd(item.usd)}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               );
             })}
@@ -1645,6 +1682,9 @@ export default function App() {
                 <div style={{ fontSize: 9, color: "#3b82f6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>2026 Total Gross</div>
                 <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 22, color: "var(--blue)", fontWeight: 500, letterSpacing: "-0.02em" }}><AnimNum value={totalPhp} /></div>
                 <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 3 }}>{php(confirmedPhp)} confirmed · {php(estimatedPhp)} estimated</div>
+                {extraIncomeTotalPhp > 0 && (
+                  <div style={{ fontSize: 10, color: "#a855f7", marginTop: 3 }}>+ {php(extraIncomeTotalPhp)} Hoku (direct client, separate)</div>
+                )}
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 3 }}>avg per payout</div>
