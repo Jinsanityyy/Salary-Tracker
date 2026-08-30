@@ -1155,12 +1155,21 @@ export default function App() {
         const payDate = new Date(y, m, src.payDay);
         const amount  = src.overrides?.[`${y}-${m}`] ?? src.amountUsd;
         return {
-          id: `${src.id}-${y}-${m}`, name: src.name, note: src.note,
+          id: `${src.id}-${y}-${m}`, name: src.name, note: src.note, payDate,
           payLabel: payDate.toLocaleDateString("en", { month: "short", day: "numeric" }),
           php: amount * effectiveFx, usd: amount,
         };
       });
   }
+  // Nearest upcoming recurring-income payment (e.g. Hoku), for the Budget tab's income picture.
+  const nextExtraIncome = (() => {
+    for (let i = 0; i < 6; i++) {
+      const probe = new Date(TODAY.getFullYear(), TODAY.getMonth() + i, 1);
+      const found = getExtraIncomeForMonth(probe.getFullYear(), probe.getMonth()).find(it => it.payDate >= TODAY);
+      if (found) return found;
+    }
+    return null;
+  })();
   for (let m = 0; m <= 11; m++) {
     const mk    = `2026-${m}`;
     const items = getExtraIncomeForMonth(2026, m);
@@ -1197,7 +1206,8 @@ export default function App() {
   const budgetSecondData   = budgetSecond ? getCycleData(budgetSecond) : null;
   const budgetFirstIncome  = Math.round(budgetFirstData?.php  ?? BUDGET_DATA.income.c1);
   const budgetSecondIncome = Math.round(budgetSecondData?.php ?? BUDGET_DATA.income.c2);
-  const budgetMonthly      = budgetFirstIncome + budgetSecondIncome;
+  const budgetHokuIncome   = Math.round(nextExtraIncome?.php || 0);
+  const budgetMonthly      = budgetFirstIncome + budgetSecondIncome + budgetHokuIncome;
   const firstItems         = budgetFirst?.type  === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const secondItems        = budgetSecond?.type === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const firstTotalSpend    = [...firstItems, ...budgetFirstExtras].reduce((a, b) => a + b.amount, 0);
@@ -1746,6 +1756,13 @@ export default function App() {
                   </div>
                 ))}
               </div>
+              {nextExtraIncome && (
+                <div style={{ background: "rgba(168,85,247,.07)", border: "1px solid rgba(168,85,247,.2)", borderRadius: 10, padding: "10px 12px", marginTop: 10 }}>
+                  <div style={{ fontSize: 9, color: "#a855f7", marginBottom: 4 }}>{nextExtraIncome.note} ({nextExtraIncome.name}) · Paid {nextExtraIncome.payLabel}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 17, color: "#a855f7", fontWeight: 600 }}>₱{budgetHokuIncome.toLocaleString()}</div>
+                  <div style={{ fontSize: 9, color: "#a855f7", marginTop: 3 }}>direct client, added to combined income below</div>
+                </div>
+              )}
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--fg3)", marginBottom: 5 }}>
                   <span>Combined</span>
@@ -2034,6 +2051,34 @@ export default function App() {
                   <span>₱1M</span>
                 </div>
               </div>
+
+              {/* Hoku income — hypothetical accelerated ETA (informational only; doesn't change the actual ₱{monthlyRate}/mo transfer) */}
+              {(() => {
+                const hokuMonthly   = 800 * effectiveFx; // steady-state, from Oct 2026 onward
+                const boostedRate   = monthlyRate + hokuMonthly;
+                const boostedMonths = remaining > 0 ? Math.ceil(remaining / boostedRate) : 0;
+                return (
+                  <div style={{ background: "rgba(168,85,247,.05)", border: "1px solid rgba(168,85,247,.22)", borderRadius: 16, padding: "16px 18px" }}>
+                    <div style={{ fontSize: 10, color: "#a855f7", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: 500 }}>If Hoku Income Also Goes to Savings</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
+                      <div style={{ background: "var(--raised)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 4, letterSpacing: "0.06em" }}>NOW</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, color: "var(--teal)", fontWeight: 600 }}>{monthsLeft} mo</div>
+                        <div style={{ fontSize: 9, color: "var(--fg4)", marginTop: 2 }}>₱{Math.round(monthlyRate).toLocaleString()}/mo</div>
+                      </div>
+                      <div style={{ fontSize: 18, color: "var(--fg4)", textAlign: "center" }}>→</div>
+                      <div style={{ background: "rgba(168,85,247,.08)", border: "1px solid rgba(168,85,247,.2)", borderRadius: 10, padding: "10px 12px" }}>
+                        <div style={{ fontSize: 9, color: "#a855f7", marginBottom: 4, letterSpacing: "0.06em" }}>WITH HOKU</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 16, color: "#a855f7", fontWeight: 700 }}>{boostedMonths} mo</div>
+                        <div style={{ fontSize: 9, color: "#a855f7", marginTop: 2 }}>₱{Math.round(boostedRate).toLocaleString()}/mo</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 10, lineHeight: 1.5 }}>
+                      Hypothetical only — your actual ₱{Math.round(monthlyRate).toLocaleString()}/mo transfer hasn't changed. This shows what's possible if the full ₱{Math.round(hokuMonthly).toLocaleString()}/mo from Hoku goes to savings too.
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* CC Payoff Unlock */}
               {(() => {
