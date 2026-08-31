@@ -1229,10 +1229,15 @@ export default function App() {
   const budgetSecondIncome = Math.round(budgetSecondData?.php ?? BUDGET_DATA.income.c2);
   const budgetHokuIncome   = Math.round(nextExtraIncome?.php || 0);
   const budgetMonthly      = budgetFirstIncome + budgetSecondIncome + budgetHokuIncome;
+  // Hoku's cash lands before whichever cutoff pays on or after it, so its
+  // income belongs in that cutoff's own pocket, not just the monthly total.
+  const hokuGoesToFirst    = !nextExtraIncome || !budgetFirst || nextExtraIncome.payDate <= budgetFirst.paidDate;
+  const cutoffFirstIncome  = budgetFirstIncome  + (hokuGoesToFirst  ? budgetHokuIncome : 0);
+  const cutoffSecondIncome = budgetSecondIncome + (!hokuGoesToFirst ? budgetHokuIncome : 0);
   const firstItems         = budgetFirst?.type  === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const secondItems        = budgetSecond?.type === "A" ? BUDGET_DATA.cutoff1.budget : BUDGET_DATA.cutoff2.budget;
   const firstTotalSpend    = [...firstItems, ...budgetFirstExtras].reduce((a, b) => a + b.amount, 0);
-  const dynamicCarryOver   = Math.max(0, budgetFirstIncome - firstTotalSpend);
+  const dynamicCarryOver   = Math.max(0, cutoffFirstIncome - firstTotalSpend);
 
   const palengkeTotal = PALENGKE_SECTIONS.reduce((tot, sec) =>
     tot + sec.items.reduce((sub, item) => {
@@ -1879,8 +1884,8 @@ export default function App() {
               // Pocket money from this month's cutoffs (rough estimate)
               const firstSavingsHidden  = firstItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
               const secondSavingsHidden = secondItems.filter(i => i.type === "savings").reduce((a,b) => a + b.amount, 0);
-              const firstPocket  = budgetFirstIncome  - firstItems.reduce((a,b) => a + b.amount, 0) - budgetFirstExtras.reduce((a,b) => a + b.amount, 0);
-              const secondPocket = budgetSecondIncome - secondItems.reduce((a,b) => a + b.amount, 0) - budgetSecondExtras.reduce((a,b) => a + b.amount, 0);
+              const firstPocket  = cutoffFirstIncome  - firstItems.reduce((a,b) => a + b.amount, 0) - budgetFirstExtras.reduce((a,b) => a + b.amount, 0);
+              const secondPocket = cutoffSecondIncome - secondItems.reduce((a,b) => a + b.amount, 0) - budgetSecondExtras.reduce((a,b) => a + b.amount, 0);
               const totalPocket  = firstPocket + secondPocket;
 
               // Tips
@@ -1946,8 +1951,8 @@ export default function App() {
 
             {/* Cutoff cards */}
             <CutoffCard
-              title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}`}
-              income={budgetFirstIncome} items={firstItems} carryOver={null}
+              title={`${budgetFirst?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetFirst?.paidLabel || "—"}${budgetFirstData?.isActual ? " ✓" : " ~"}${hokuGoesToFirst && budgetHokuIncome > 0 ? " + Hoku" : ""}`}
+              income={cutoffFirstIncome} items={firstItems} carryOver={null}
               cardKey="budget-first" extras={budgetFirstExtras} onExtrasChange={setBudgetFirstExtras}
               palengkeDeduction={palengkeTotal} palengkeCount={palengkeCheckedCount}
             />
@@ -1957,8 +1962,8 @@ export default function App() {
               <div style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
             </div>
             <CutoffCard
-              title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}`}
-              income={budgetSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
+              title={`${budgetSecond?.type === "A" ? "Cutoff 1" : "Cutoff 2"} — Paid ${budgetSecond?.paidLabel || "—"}${budgetSecondData?.isActual ? " ✓" : " ~"}${!hokuGoesToFirst && budgetHokuIncome > 0 ? " + Hoku" : ""}`}
+              income={cutoffSecondIncome} items={secondItems} carryOver={dynamicCarryOver}
               cardKey="budget-second" extras={budgetSecondExtras} onExtrasChange={setBudgetSecondExtras}
               palengkeDeduction={palengkeTotal} palengkeCount={palengkeCheckedCount}
             />
