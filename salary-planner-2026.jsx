@@ -160,7 +160,12 @@ const BUDGET_DATA = {
 };
 
 const CC_LOANS = [
-  { name: "Credit-To-Cash 5", since: "May '12", purchased: 100000, remaining: 62463.62, monthly: 8922.76, color: "#fb923c" },
+  {
+    name: "Credit-To-Cash 5", since: "May '12", purchased: 100000, monthly: 8922.76, color: "#fb923c",
+    // Last confirmed balance from the actual statement — remaining is derived
+    // forward from here every month, so it stays current without manual logging.
+    asOfDate: new Date(2026, 4, 18), asOfRemaining: 62463.62,
+  },
 ];
 
 const TYPE_COLORS = {
@@ -174,6 +179,20 @@ const TYPE_LABELS = { fixed: "Fixed", variable: "Variable", flex: "Flex", saving
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TODAY = new Date();
+
+// Full months elapsed between two dates (calendar-aware, not just /30).
+function monthsBetween(from, to) {
+  let n = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+  if (to.getDate() < from.getDate()) n -= 1;
+  return Math.max(0, n);
+}
+
+// Installment balance as of right now, stepped down by one `monthly` payment
+// for every full month since the loan's last confirmed statement balance.
+function ccRemainingNow(loan) {
+  const paidSince = monthsBetween(loan.asOfDate, TODAY) * loan.monthly;
+  return Math.max(0, loan.asOfRemaining - paidSince);
+}
 const php   = n => "₱" + Math.round(n).toLocaleString();
 const usd   = n => "$" + Number(n).toFixed(2);
 
@@ -1948,7 +1967,7 @@ export default function App() {
                 <div>
                   <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>CC Installment Debt</div>
                   <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 24, color: "var(--rose)", fontWeight: 700 }}>
-                    ₱{CC_LOANS.reduce((a, l) => a + l.remaining, 0).toLocaleString("en", { maximumFractionDigits: 0 })}
+                    ₱{CC_LOANS.reduce((a, l) => a + ccRemainingNow(l), 0).toLocaleString("en", { maximumFractionDigits: 0 })}
                   </div>
                   <div style={{ fontSize: 10, color: "var(--fg3)", marginTop: 2 }}>total remaining balance</div>
                 </div>
@@ -1961,7 +1980,8 @@ export default function App() {
               </div>
 
               {CC_LOANS.map((loan, i) => {
-                const paidPct = Math.round(((loan.purchased - loan.remaining) / loan.purchased) * 100);
+                const loanRemaining = ccRemainingNow(loan);
+                const paidPct = Math.round(((loan.purchased - loanRemaining) / loan.purchased) * 100);
                 return (
                   <div key={i} style={{ borderTop: "1px solid rgba(56,189,248,0.08)", paddingTop: 14, marginTop: i > 0 ? 14 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1971,7 +1991,7 @@ export default function App() {
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 15, color: loan.color, fontWeight: 600 }}>
-                          ₱{Math.round(loan.remaining).toLocaleString()}
+                          ₱{Math.round(loanRemaining).toLocaleString()}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--fg3)", marginTop: 1 }}>₱{loan.monthly.toLocaleString("en", { maximumFractionDigits: 0 })}/mo</div>
                       </div>
@@ -2114,7 +2134,8 @@ export default function App() {
               {/* CC Payoff Unlock */}
               {(() => {
                 const cc           = CC_LOANS[0];
-                const ccMonths     = Math.ceil(cc.remaining / cc.monthly);
+                const ccRemaining  = ccRemainingNow(cc);
+                const ccMonths     = Math.ceil(ccRemaining / cc.monthly);
                 const ccDoneDate   = new Date(TODAY);
                 ccDoneDate.setMonth(ccDoneDate.getMonth() + ccMonths);
                 const ccDoneStr    = ccDoneDate.toLocaleDateString("en", { month: "long", year: "numeric" });
@@ -2131,7 +2152,7 @@ export default function App() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 11, color: "var(--fg3)", marginBottom: 2 }}>Credit-To-Cash 5 ends</div>
                         <div style={{ fontSize: 15, color: "#fbbf24", fontWeight: 600 }}>{ccDoneStr}</div>
-                        <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 1 }}>in ~{ccMonths} months · ₱{Math.round(cc.remaining).toLocaleString()} remaining</div>
+                        <div style={{ fontSize: 10, color: "var(--fg4)", marginTop: 1 }}>in ~{ccMonths} months · ₱{Math.round(ccRemaining).toLocaleString()} remaining</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 9, color: "var(--fg4)", marginBottom: 4 }}>Monthly freed</div>
