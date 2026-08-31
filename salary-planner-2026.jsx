@@ -162,9 +162,10 @@ const BUDGET_DATA = {
 const CC_LOANS = [
   {
     name: "Credit-To-Cash 5", since: "May '12", purchased: 100000, monthly: 8922.76, color: "#fb923c",
-    // Last confirmed balance from the actual statement — remaining is derived
-    // forward from here every month, so it stays current without manual logging.
-    asOfDate: new Date(2026, 4, 18), asOfRemaining: 62463.62,
+    // Final due date — remaining is derived backward from here (one monthly
+    // payment per month still owed), so it counts down on its own with no
+    // manual logging needed.
+    endDate: new Date(2026, 10, 18), // Nov 18, 2026
   },
 ];
 
@@ -180,18 +181,19 @@ const TYPE_LABELS = { fixed: "Fixed", variable: "Variable", flex: "Flex", saving
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const TODAY = new Date();
 
-// Full months elapsed between two dates (calendar-aware, not just /30).
-function monthsBetween(from, to) {
-  let n = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
-  if (to.getDate() < from.getDate()) n -= 1;
-  return Math.max(0, n);
-}
-
-// Installment balance as of right now, stepped down by one `monthly` payment
-// for every full month since the loan's last confirmed statement balance.
+// Installment balance as of right now: count monthly due dates from the
+// loan's final payment backward, stopping once a due date has already
+// passed. Each due date still ahead (or due today) represents one more
+// `monthly` payment still owed — so this counts down on its own every
+// month with no manual logging needed.
 function ccRemainingNow(loan) {
-  const paidSince = monthsBetween(loan.asOfDate, TODAY) * loan.monthly;
-  return Math.max(0, loan.asOfRemaining - paidSince);
+  let paymentsLeft = 0;
+  const dueDate = new Date(loan.endDate);
+  while (dueDate >= TODAY) {
+    paymentsLeft++;
+    dueDate.setMonth(dueDate.getMonth() - 1);
+  }
+  return Math.min(loan.purchased, paymentsLeft * loan.monthly);
 }
 const php   = n => "₱" + Math.round(n).toLocaleString();
 const usd   = n => "$" + Number(n).toFixed(2);
