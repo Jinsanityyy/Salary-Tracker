@@ -1772,6 +1772,37 @@ export default function App() {
               </div>
             </div>
 
+            {/* Total Monthly Picture — full month, both cutoffs + Hoku, minus everything budgeted */}
+            {(() => {
+              const monthlyBudgetedTotal = firstItems.reduce((a, b) => a + b.amount, 0) + budgetFirstExtras.reduce((a, b) => a + b.amount, 0)
+                + secondItems.reduce((a, b) => a + b.amount, 0) + budgetSecondExtras.reduce((a, b) => a + b.amount, 0);
+              const monthlyNetRemaining = budgetMonthly - monthlyBudgetedTotal;
+              return (
+                <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 16, padding: "18px" }}>
+                  <div style={{ fontSize: 10, color: "#14b8a6", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Total Monthly Picture</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)" }}>
+                      <span>Total income (C1 + C2{budgetHokuIncome > 0 ? " + Hoku" : ""})</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "var(--fg)" }}>₱{budgetMonthly.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--fg3)" }}>
+                      <span>Total bills + allowance + savings</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: "var(--rose)" }}>−₱{monthlyBudgetedTotal.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: "1px solid rgba(20,184,166,0.2)", marginTop: 12, paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontSize: 11, color: "var(--fg3)" }}>Left over this month</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 24, fontWeight: 600, color: monthlyNetRemaining >= 0 ? "var(--teal)" : "var(--rose)" }}>₱{monthlyNetRemaining.toLocaleString()}</span>
+                  </div>
+                  {budgetHokuIncome > 0 && (
+                    <div style={{ fontSize: 10, color: "#a855f7", marginTop: 8, lineHeight: 1.5 }}>
+                      Includes ₱{budgetHokuIncome.toLocaleString()} from Hoku, which has no bills attached — it flows straight into what's left over.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Leak warning */}
             <div style={{ background: "rgba(14,3,5,0.96)", border: "1px solid rgba(255,255,255,0.05)", boxShadow: "inset 3px 0 0 rgba(185,28,28,0.55)", borderRadius: 14, padding: "20px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
